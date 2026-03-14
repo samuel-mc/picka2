@@ -6,7 +6,7 @@ export function useLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const login = async (username: string, password: string) => {
+  const login = async (username: string, password: string, redirectPath: string = "/user/dashboard") => {
     setError("");
     setIsLoading(true);
     const baseUrl = import.meta.env.VITE_API_URL;
@@ -23,7 +23,7 @@ export function useLogin() {
       const data = await res.json();
       localStorage.setItem("token", data.token);
       setIsLoading(false);
-      navigate("/user/dashboard");
+      navigate(redirectPath);
     } catch (err: any) {
       setIsLoading(false);
       setError(err.message);

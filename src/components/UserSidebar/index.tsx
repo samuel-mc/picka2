@@ -29,7 +29,7 @@ export const UserSidebar: React.FC<Props> = ({ links }) => {
             <li key={index} className="my-4">
               <Link
                 to={element.link}
-                className="flex items-center text-primary dm-sans font-semibold text-xl hover:text-primary-dark transition-colors"
+                className="flex items-center text-primaryBlue dm-sans font-semibold text-xl hover:text-primary-dark transition-colors"
               >
                 {Icon && <Icon size={20} className="me-3" />}
                 {element.name}

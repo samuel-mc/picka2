@@ -63,7 +63,7 @@ export const UserSignup = () => {
   return (
     <UserLayout>
       <Loading visible={isLoading} />
-        <h1 className="text-3xl text-primary mb-6">Registro de usuarios internos</h1>
+        <h1 className="text-3xl text-primaryBlue mb-6">Registro de usuarios internos</h1>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-col">
             <RegisterInput<Inputs>
@@ -152,7 +152,7 @@ export const UserSignup = () => {
             <input
               type="submit"
               value="Enviar"
-              className="bg-primary py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
+              className="bg-primaryBlue py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
             />
           </div>
         </form>

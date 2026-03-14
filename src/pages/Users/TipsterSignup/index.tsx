@@ -1,4 +1,3 @@
-import { UserLayout } from "../../../layouts/UsersLayout";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import "../UserSignup/styles.css";
@@ -68,116 +67,121 @@ export const TipsterSignup = () => {
   return (
     <LandingLayout>
       <Loading visible={isLoading} />
-        <h1 className="text-3xl text-primary mb-6">Registro de Tipster</h1>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="flex flex-col">
-            <RegisterInput<Inputs>
-              name="name"
-              label="Nombre"
-              register={register}
-              fieldError={errors.name}
-              required
-              validation={{
-                minLength: {
-                  value: 2,
-                  message: "Debe tener al menos 2 caracteres",
-                },
-                maxLength: {
-                  value: 50,
-                  message: "No puede exceder 50 caracteres",
-                },
-                pattern: { value: /^[A-Za-z\s]+$/, message: "Solo letras" },
-              }}
-            />
-            <RegisterInput<Inputs>
-              name="username"
-              label="Username"
-              register={register}
-              fieldError={errors.username}
-              required
-              validation={{
-                minLength: {
-                  value: 5,
-                  message: "Debe tener al menos 5 caracteres",
-                },
-                maxLength: {
-                  value: 20,
-                  message: "No puede exceder 20 caracteres",
-                },
-                pattern: {
-                  value: /^[A-Za-z0-9]+$/,
-                  message: "Solo se permiten letras y números",
-                },
-              }}
-            />
-            <RegisterInput<Inputs>
-              name="email"
-              label="Correo"
-              register={register}
-              fieldError={errors.email}
-              required
-              validation={{
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Correo inválido",
-                },
-              }}
-            />
-            <RegisterInput<Inputs>
-              name="password"
-              label="Contraseña"
-              register={register}
-              fieldError={errors.password}
-              type="password"
-              required
-              validation={{
-                minLength: {
-                  value: 8,
-                  message: "Debe tener al menos 8 caracteres",
-                },
-                pattern: {
-                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
-                  message: "Debe incluir mayúsculas, minúsculas y números",
-                },
-              }}
-            />
-            <RegisterInput<Inputs>
-              name="passwordConfirm"
-              label="Confirmar Contraseña"
-              register={register}
-              fieldError={errors.passwordConfirm}
-              type="password"
-              required
-              validation={{
-                validate: (value) =>
-                  value === getValues("password") ||
-                  "Las contraseñas no coinciden",
-              }}
-            />
-            <RegisterInput<Inputs>
-              name="bio"
-              label="Biografía"
-              register={register}
-              fieldError={errors.bio}
-              required
-              validation={{
-                minLength: {
-                  value: 10,
-                  message: "Debe tener al menos 10 caracteres",
-                },
-                maxLength: {
-                  value: 500,
-                  message: "No puede exceder 500 caracteres",
-                },
-              }}
-            />
-            <input
-              type="submit"
-              value="Enviar"
-              className="bg-primary py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
-            />
-          </div>
-        </form>
+        <div className="max-w-7xl mx-auto py-10 px-5">
+          <header>
+            <h1 className="text-3xl text-primaryBlue mb-2">No sigas al gurú, conviértete en uno.</h1>
+            <p className="text-black mb-10">Completa el formulario para convertirte en tipster</p>
+          </header>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <div className="flex flex-col">
+              <RegisterInput<Inputs>
+                name="name"
+                label="Nombre"
+                register={register}
+                fieldError={errors.name}
+                required
+                validation={{
+                  minLength: {
+                    value: 2,
+                    message: "Debe tener al menos 2 caracteres",
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: "No puede exceder 50 caracteres",
+                  },
+                  pattern: { value: /^[A-Za-z\s]+$/, message: "Solo letras" },
+                }}
+              />
+              <RegisterInput<Inputs>
+                name="username"
+                label="Username"
+                register={register}
+                fieldError={errors.username}
+                required
+                validation={{
+                  minLength: {
+                    value: 5,
+                    message: "Debe tener al menos 5 caracteres",
+                  },
+                  maxLength: {
+                    value: 20,
+                    message: "No puede exceder 20 caracteres",
+                  },
+                  pattern: {
+                    value: /^[A-Za-z0-9]+$/,
+                    message: "Solo se permiten letras y números",
+                  },
+                }}
+              />
+              <RegisterInput<Inputs>
+                name="email"
+                label="Correo"
+                register={register}
+                fieldError={errors.email}
+                required
+                validation={{
+                  pattern: {
+                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                    message: "Correo inválido",
+                  },
+                }}
+              />
+              <RegisterInput<Inputs>
+                name="password"
+                label="Contraseña"
+                register={register}
+                fieldError={errors.password}
+                type="password"
+                required
+                validation={{
+                  minLength: {
+                    value: 8,
+                    message: "Debe tener al menos 8 caracteres",
+                  },
+                  pattern: {
+                    value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
+                    message: "Debe incluir mayúsculas, minúsculas y números",
+                  },
+                }}
+              />
+              <RegisterInput<Inputs>
+                name="passwordConfirm"
+                label="Confirmar Contraseña"
+                register={register}
+                fieldError={errors.passwordConfirm}
+                type="password"
+                required
+                validation={{
+                  validate: (value) =>
+                    value === getValues("password") ||
+                    "Las contraseñas no coinciden",
+                }}
+              />
+              <RegisterInput<Inputs>
+                name="bio"
+                label="Biografía"
+                register={register}
+                fieldError={errors.bio}
+                required
+                validation={{
+                  minLength: {
+                    value: 10,
+                    message: "Debe tener al menos 10 caracteres",
+                  },
+                  maxLength: {
+                    value: 500,
+                    message: "No puede exceder 500 caracteres",
+                  },
+                }}
+              />
+              <input
+                type="submit"
+                value="Enviar"
+                className="bg-primaryBlue py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
+              />
+            </div>
+          </form>
+        </div>
     </LandingLayout>
   );
 };

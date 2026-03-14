@@ -36,9 +36,9 @@ export const UserLogin = () => {
   return (
     <LandingLayout>
       <Loading visible={isLoading} />
-      <div className="content-center">
+      <div className="content-center py-10">
         <div className="bg-white shadow rounded py-10 px-8 max-w-2xl mx-auto">
-          <h1 className="text-3xl text-primary mb-6">Iniciar sesión</h1>
+          <h1 className="text-3xl text-primaryBlue mb-6">Iniciar sesión como usuario interno</h1>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col">
               <RegisterInput<Inputs>
@@ -59,7 +59,7 @@ export const UserLogin = () => {
               <input
                 type="submit"
                 value="Enviar"
-                className="bg-primary py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
+                className="bg-primaryBlue py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
               />
             </div>
           </form>

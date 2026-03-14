@@ -6,10 +6,13 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --color-primary: #134686;
-  --color-secondary: #ED3F27; /* Example: Slate blue */
-  --color-accent: #FEB21A; /* Example: Light blue */
-  --color-light: #FDF4E3; /* Example: Steel blue */
+  --color-primaryBlue: #134686;
+  --color-secondaryBlue: #ED3F27;
+  /* Example: Slate blue */
+  --color-accentBlue: #FEB21A;
+  /* Example: Light blue */
+  --color-light: #FDF4E3;
+  /* Example: Steel blue */
 }
 
 .dm-sans {
@@ -32,7 +35,9 @@
   font-variation-settings: "wdth" 100;
 }
 
-label, h1, h2 {
+label,
+h1,
+h2 {
   font-family: "DM Sans", sans-serif;
   font-optical-sizing: auto;
   font-style: normal;
@@ -153,9 +158,11 @@ label, h1, h2 {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
+
   html {
     @apply font-sans;
   }
