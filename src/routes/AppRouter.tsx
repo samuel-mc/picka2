@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // import Home from '../pages/Home';
 import { UserSignup } from '../pages/Users/UserSignup';
+import { TipsterSignup } from '../pages/Users/TipsterSignup';
 import { UserLogin } from '../pages/Users/UserLogin';
 import { UserDashboard } from '../pages/Users/UserDashborad';
 // import Dashboard from '../pages/Dashboard';
@@ -14,6 +15,7 @@ export default function AppRouter() {
         {/* Rutas Públicas (solo accesibles si NO estás logeado) */}
         <Route element={<PublicRoute />}>
           <Route path="/user/login" element={<UserLogin />} />
+          <Route path="/tipster/signup" element={<TipsterSignup />} />
         </Route>
 
         {/* Rutas Protegidas (solo accesibles si ESTÁS logeado) */}

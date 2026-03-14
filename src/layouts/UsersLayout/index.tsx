@@ -14,13 +14,13 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
     {
       id: 1,
       name: "Home",
-      link: "/users/dashboard",
+      link: "/user/dashboard",
       icon: House,
     },
     {
       id: 2,
       name: "Usuarios",
-      link: "/users/usuarios",
+      link: "/user/usuarios",
       icon: Users,
     },
   ];
