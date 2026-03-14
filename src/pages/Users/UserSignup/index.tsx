@@ -1,9 +1,9 @@
-import { UserLayout } from "../../layouts/UsersLayout";
+import { UserLayout } from "../../../layouts/UsersLayout";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import "./styles.css";
-import { RegisterInput } from "../../components/RegisterInput";
-import { Loading } from "../../components/Loading";
+import { RegisterInput } from "../../../components/RegisterInput";
+import { Loading } from "../../../components/Loading";
 import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -63,8 +63,7 @@ export const UserSignup = () => {
   return (
     <UserLayout>
       <Loading visible={isLoading} />
-      <div className="bg-white shadow rounded py-10 px-8">
-        <h1 className="text-3xl text-primary mb-6">Registro como usuario</h1>
+        <h1 className="text-3xl text-primary mb-6">Registro de usuarios internos</h1>
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="flex flex-col">
             <RegisterInput<Inputs>
@@ -153,11 +152,10 @@ export const UserSignup = () => {
             <input
               type="submit"
               value="Enviar"
-              className="bg-primary py-3 px-10 w-fit text-light mt-6"
+              className="bg-primary py-3 px-10 w-fit text-light mt-6 hover:cursor-pointer"
             />
           </div>
         </form>
-      </div>
     </UserLayout>
   );
 };

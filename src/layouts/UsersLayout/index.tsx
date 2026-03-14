@@ -1,19 +1,40 @@
 import React from "react";
-import Header from "../../components/Header";
-import Footer from "../../components/Footer";
+import { UserSidebar } from "../../components/UserSidebar";
+import type { LinkModel } from "../../models/LinkModel";
+import { House, Users } from "lucide-react";
+
+import "./styles.css";
 
 interface UserLayoutProps {
   children: React.ReactNode;
 }
 
 export const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
+  const links: LinkModel[] = [
+    {
+      id: 1,
+      name: "Home",
+      link: "/users/dashboard",
+      icon: House,
+    },
+    {
+      id: 2,
+      name: "Usuarios",
+      link: "/users/usuarios",
+      icon: Users,
+    },
+  ];
   return (
-    <>
-      <Header />
-      <main className="max-w-7xl mx-auto p-4 bg-white rounded" style={{minHeight: 'calc(100vh - 88px - 90px)'}}>
-        {children}
-      </main>
-      <Footer />
-    </>
+    <div className="users__layout bg-gray-100 py-6 px-5">
+      <UserSidebar links={links} />
+      <div>
+        <main
+          className="max-w-7xl mx-auto p-4 bg-white shadow rounded py-10 px-8"
+          style={{ minHeight: "calc(100vh - 88px - 90px)" }}
+        >
+          {children}
+        </main>
+      </div>
+    </div>
   );
 };

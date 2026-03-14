@@ -1,0 +1,6 @@
+.users__layout {
+    display: grid;
+    grid-template-columns: 3fr 9fr;
+    gap: 24px;
+    min-height: 100vh;
+}

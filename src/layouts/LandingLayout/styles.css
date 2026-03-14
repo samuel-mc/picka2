@@ -1,0 +1,3 @@
+.landing__content {
+    min-height: calc(100vh - 90px - 88px);
+}
