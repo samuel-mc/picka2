@@ -1,13 +1,15 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 // import Home from '../pages/Home';
-import { UserSignup } from '../pages/Users/UserSignup';
-import { TipsterSignup } from '../pages/Users/TipsterSignup';
-import { TipsterLogin } from '../pages/Users/TipsterLogin';
-import { UserLogin } from '../pages/Users/UserLogin';
-import { UserDashboard } from '../pages/Users/UserDashborad';
+import { UserSignup } from '../pages/auth/UserSignup';
+import { TipsterSignup } from '../pages/auth/TipsterSignup';
+import { TipsterLogin } from '../pages/auth/TipsterLogin';
+import { UserLogin } from '../pages/auth/UserLogin';
+import { UserDashboard } from '../pages/user/UserDashboard';
 // import Dashboard from '../pages/Dashboard';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
+
+import Landing from '../pages/landing';
 
 export default function AppRouter() {
   return (
@@ -15,15 +17,24 @@ export default function AppRouter() {
       <Routes>
         {/* Rutas Públicas (solo accesibles si NO estás logeado) */}
         <Route element={<PublicRoute />}>
-          <Route path="/user/login" element={<UserLogin />} />
-          <Route path="/tipster/login" element={<TipsterLogin />} />
-          <Route path="/tipster/signup" element={<TipsterSignup />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/admin/login" element={<UserLogin />} />
+          <Route path="/login" element={<TipsterLogin />} />
+          <Route path="/registro" element={<TipsterSignup />} />
         </Route>
 
         {/* Rutas Protegidas (solo accesibles si ESTÁS logeado) */}
-        <Route element={<ProtectedRoute />}>
-          <Route path="/user/signup" element={<UserSignup />} />
-          <Route path="/user/dashboard" element={<UserDashboard />} />
+
+        {/* Módulos solo para administradores (antiguos usuarios regulares) */}
+        <Route element={<ProtectedRoute allowedRoles={['ROLE_USER']} />}>
+          <Route path="/admin/registro" element={<UserSignup />} />
+          <Route path="/admin/panel" element={<UserDashboard />} />
+        </Route>
+
+        {/* Módulos solo para tipsters (Ejemplo) */}
+        {/* Descomenta y agrega tus componentes cuando los tengas */}
+        <Route element={<ProtectedRoute allowedRoles={['ROLE_TIPSTER']} />}>
+          {/* <Route path="/tipster/dashboard" element={<TipsterDashboard />} /> */}
         </Route>
       </Routes>
     </BrowserRouter>

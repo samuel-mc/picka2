@@ -1,7 +1,7 @@
 import React from "react";
-import type { LinkModel } from "../../models/LinkModel";
+import type { LinkModel } from "../../../models/LinkModel";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import logo from "../../../assets/logo.png";
 import { LogOut } from "lucide-react";
 
 interface Props {

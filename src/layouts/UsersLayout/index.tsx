@@ -1,5 +1,5 @@
 import React from "react";
-import { UserSidebar } from "../../components/UserSidebar";
+import { UserSidebar } from "../../components/user/UserSidebar";
 import type { LinkModel } from "../../models/LinkModel";
 import { House, Users } from "lucide-react";
 

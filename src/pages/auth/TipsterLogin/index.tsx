@@ -1,10 +1,10 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Link } from "react-router-dom";
-import { RegisterInput } from "../../../components/RegisterInput";
-import { Loading } from "../../../components/Loading";
+import { RegisterInput } from "../../../components/common/RegisterInput";
+import { Loading } from "../../../components/common/Loading";
 import { useLogin } from "../../../hooks/useLogin";
 import toast from "react-hot-toast";
-import { LandingLayout } from "../../../layouts/LandingLayout";
+import { TipsterLayout } from "../../../layouts/TipsterLayout";
 import sideImg from "../../../assets/side_login.png";
 type Inputs = {
   username: string;
@@ -31,7 +31,7 @@ export const TipsterLogin = () => {
   };
   
   return (
-    <LandingLayout>
+    <TipsterLayout isFixed={false}>
       <Loading visible={isLoading} />
       <div className="grid grid-cols-2">
         <div className="">
@@ -66,7 +66,7 @@ export const TipsterLogin = () => {
             </form>
             <div className="mt-6 text-center">
               <span className="text-gray-600">¿No tienes cuenta? </span>
-              <Link to="/tipster/signup" className="text-primaryBlue hover:underline font-semibold">
+              <Link to="/registro" className="text-primaryBlue hover:underline font-semibold">
                 Regístrate aquí
               </Link>
             </div>
@@ -74,6 +74,6 @@ export const TipsterLogin = () => {
       </div>
 
       </div>
-    </LandingLayout>
+    </TipsterLayout>
   );
 };

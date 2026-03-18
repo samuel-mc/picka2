@@ -1,9 +1,9 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
-import { RegisterInput } from "../../../components/RegisterInput";
-import { Loading } from "../../../components/Loading";
+import { RegisterInput } from "../../../components/common/RegisterInput";
+import { Loading } from "../../../components/common/Loading";
 import { useLogin } from "../../../hooks/useLogin";
 import toast from "react-hot-toast";
-import { LandingLayout } from "../../../layouts/LandingLayout";
+import { TipsterLayout } from "../../../layouts/TipsterLayout";
 
 type Inputs = {
   username: string;
@@ -24,7 +24,6 @@ export const UserLogin = () => {
   } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log(data);
     const username = data.username?.trim()?.toLowerCase();
     await login(username, data.password);
     if (error) {
@@ -34,7 +33,7 @@ export const UserLogin = () => {
   };
   
   return (
-    <LandingLayout>
+    <TipsterLayout>
       <Loading visible={isLoading} />
       <div className="content-center py-10">
         <div className="bg-white shadow rounded py-10 px-8 max-w-2xl mx-auto">
@@ -66,6 +65,6 @@ export const UserLogin = () => {
       </div>
 
       </div>
-    </LandingLayout>
+    </TipsterLayout>
   );
 };

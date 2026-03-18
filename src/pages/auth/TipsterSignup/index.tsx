@@ -1,13 +1,14 @@
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import "../UserSignup/styles.css";
-import { RegisterInput } from "../../../components/RegisterInput";
-import { Loading } from "../../../components/Loading";
+import { RegisterInput } from "../../../components/common/RegisterInput";
+import { Loading } from "../../../components/common/Loading";
 import { useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { LandingLayout } from "../../../layouts/LandingLayout";
+import { TipsterLayout } from "../../../layouts/TipsterLayout";
+import "./styles.css";
 
 type Inputs = {
   name: string;
@@ -50,7 +51,6 @@ export const TipsterSignup = () => {
 
     try {
       const payload = formatFormData(data);
-      // Sending to /auth/register-tipster. You can adjust this if the backend route is different.
       await api.post("/auth/register-tipster", payload);
       toast.success("Tipster creado correctamente");
       navigate("/user/login", { replace: true });
@@ -65,7 +65,7 @@ export const TipsterSignup = () => {
   };
 
   return (
-    <LandingLayout>
+    <TipsterLayout isFixed={false}>
       <Loading visible={isLoading} />
         <div className="max-w-7xl mx-auto py-10 px-5">
           <header>
@@ -162,6 +162,7 @@ export const TipsterSignup = () => {
                 label="Biografía"
                 register={register}
                 fieldError={errors.bio}
+                type="textarea"
                 required
                 validation={{
                   minLength: {
@@ -182,6 +183,6 @@ export const TipsterSignup = () => {
             </div>
           </form>
         </div>
-    </LandingLayout>
+    </TipsterLayout>
   );
 };
