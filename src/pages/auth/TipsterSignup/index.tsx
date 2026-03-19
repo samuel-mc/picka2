@@ -12,6 +12,7 @@ import "./styles.css";
 
 type Inputs = {
   name: string;
+  lastname: string;
   username: string;
   email: string;
   password: string;
@@ -34,6 +35,7 @@ export const TipsterSignup = () => {
 
   const formatFormData = (data: Inputs) => ({
     name: data.name?.trim().toUpperCase(),
+    lastname: data.lastname?.trim().toUpperCase(),
     username: data.username?.trim().toLowerCase(),
     email: data.email?.trim().toLowerCase(),
     password: data.password,
@@ -52,7 +54,7 @@ export const TipsterSignup = () => {
     try {
       const payload = formatFormData(data);
       await api.post("/auth/register-tipster", payload);
-      toast.success("Tipster creado correctamente");
+      toast.success("Tipster creado correctamente", { duration: 5000 });
       navigate("/user/login", { replace: true });
     } catch (error: any) {
       console.error("Error en registro:", error);
@@ -79,6 +81,24 @@ export const TipsterSignup = () => {
                 label="Nombre"
                 register={register}
                 fieldError={errors.name}
+                required
+                validation={{
+                  minLength: {
+                    value: 2,
+                    message: "Debe tener al menos 2 caracteres",
+                  },
+                  maxLength: {
+                    value: 50,
+                    message: "No puede exceder 50 caracteres",
+                  },
+                  pattern: { value: /^[A-Za-z\s]+$/, message: "Solo letras" },
+                }}
+              />
+              <RegisterInput<Inputs>
+                name="lastname"
+                label="Apellido"
+                register={register}
+                fieldError={errors.lastname}
                 required
                 validation={{
                   minLength: {
