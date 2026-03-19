@@ -9,8 +9,7 @@ export function useLogin() {
   const login = async (
     username: string, 
     password: string, 
-    redirectPath: string = "/",
-    esAdmin: boolean = false
+    redirectPath: string = "/"
   ) => {
     setError("");
     setIsLoading(true);
@@ -27,8 +26,8 @@ export function useLogin() {
 
       const data = await res.json();
       localStorage.setItem("token", data.token);
-      // Solo agregar el token si es un admin
-      if (esAdmin) {
+      // Solo agregar el ROL a local storage si es un admin
+      if (data != null && data.role != null && data.role === "ROLE_ADMIN") {
         localStorage.setItem("role", data.role);
       }
       setIsLoading(false);
@@ -39,5 +38,11 @@ export function useLogin() {
     }
   };
 
-  return { login, error, isLoading };
+  const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    navigate("/login");
+  };
+
+  return { login, logout, error, isLoading };
 }

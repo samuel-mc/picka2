@@ -1,21 +1,17 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import logo from "../../../assets/logo.png";
 import './styles.css';
+import { useLogin } from '@/hooks/useLogin';
 
 interface TipsterHeaderProps {
   isFixed?: boolean;
 }
 
 const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
-  const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const role = localStorage.getItem('role');
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('role');
-    navigate('/login');
-  };
+  const {logout} = useLogin();
 
   return (
     <header className={`${isFixed ? 'fixed top-0 left-0 right-0 z-50 ' : ''}w-full bg-primaryBlue py-5 px-10 text-light flex justify-between items-center shadow-md`}>
@@ -34,7 +30,7 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
               Dashboard
             </Link>
             <button
-              onClick={handleLogout}
+              onClick={logout}
               className="bg-white text-primaryBlue px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm"
             >
               Cerrar Sesión

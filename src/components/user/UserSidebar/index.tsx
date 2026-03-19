@@ -1,20 +1,17 @@
 import React from "react";
 import type { LinkModel } from "../../../models/LinkModel";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import logo from "../../../assets/logo.png";
 import { LogOut } from "lucide-react";
+import { useLogin } from "@/hooks/useLogin";
 
 interface Props {
   links: LinkModel[];
 }
 
 export const UserSidebar: React.FC<Props> = ({ links }) => {
-  const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/user/login");
-  };
+  const {logout} = useLogin();
 
   return (
     <div className="h-full">
@@ -40,7 +37,7 @@ export const UserSidebar: React.FC<Props> = ({ links }) => {
         
         <li className="mt-auto pt-4 pb-2 border-t border-gray-100">
           <button
-            onClick={handleLogout}
+            onClick={logout}
             className="flex items-center text-red-500 hover:text-red-700 dm-sans font-semibold text-xl w-full text-left transition-colors"
           >
             <LogOut size={20} className="me-3" />
