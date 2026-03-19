@@ -21,10 +21,9 @@ export const TipsterLogin = () => {
   } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
-    console.log(data);
     const username = data.username?.trim()?.toLowerCase();
     // Redirect tipsters to user dashboard for now (can be changed to /tipster/dashboard if it exists later)
-    await login(username, data.password, "/user/dashboard");
+    await login(username, data.password);
     if (error) {
       toast.error(error);
     } 

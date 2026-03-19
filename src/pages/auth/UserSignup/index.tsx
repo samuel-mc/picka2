@@ -50,7 +50,6 @@ export const UserSignup = () => {
       const payload = formatFormData(data);
       await api.post("/auth/register-user", payload);
       toast.success("Usuario creado correctamente");
-      console.log("va a redirigir");
       navigate("/user/login", { replace: true });
     } catch (error: any) {
       console.error("Error en registro:", error);

@@ -6,8 +6,8 @@ export const PublicRoute = () => {
   
 
   // Si el usuario esta loggeado y es admin, se envia al dashboard
-  if (token && role === 'ROLE_USER') {
-    return <Navigate to="/panel" replace />;
+  if (token && role === 'ROLE_ADMIN') {
+    return <Navigate to="/admin/panel" replace />;
   }
 
   // Si no hay token, renderizar los componentes hijos (como login o signup)

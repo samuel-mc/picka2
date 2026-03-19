@@ -25,7 +25,7 @@ export const UserLogin = () => {
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const username = data.username?.trim()?.toLowerCase();
-    await login(username, data.password);
+    await login(username, data.password, "/admin/panel", true);
     if (error) {
       toast.error(error);
     } 
@@ -33,7 +33,7 @@ export const UserLogin = () => {
   };
   
   return (
-    <TipsterLayout>
+    <TipsterLayout isFixed={false}>
       <Loading visible={isLoading} />
       <div className="content-center py-10">
         <div className="bg-white shadow rounded py-10 px-8 max-w-2xl mx-auto">

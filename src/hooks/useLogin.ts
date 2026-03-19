@@ -6,7 +6,12 @@ export function useLogin() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const login = async (username: string, password: string, redirectPath: string = "/user/dashboard") => {
+  const login = async (
+    username: string, 
+    password: string, 
+    redirectPath: string = "/",
+    esAdmin: boolean = false
+  ) => {
     setError("");
     setIsLoading(true);
     const baseUrl = import.meta.env.VITE_API_URL;
@@ -22,6 +27,10 @@ export function useLogin() {
 
       const data = await res.json();
       localStorage.setItem("token", data.token);
+      // Solo agregar el token si es un admin
+      if (esAdmin) {
+        localStorage.setItem("role", data.role);
+      }
       setIsLoading(false);
       navigate(redirectPath);
     } catch (err: any) {

@@ -4,12 +4,12 @@ import { UserSignup } from '../pages/auth/UserSignup';
 import { TipsterSignup } from '../pages/auth/TipsterSignup';
 import { TipsterLogin } from '../pages/auth/TipsterLogin';
 import { UserLogin } from '../pages/auth/UserLogin';
-import { UserDashboard } from '../pages/user/UserDashboard';
-// import Dashboard from '../pages/Dashboard';
+import { UserDashboard } from '../pages/admin/UsersDashboard';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
 
 import Landing from '../pages/landing';
+import { UsersList } from '@/pages/admin/UsersList';
 
 export default function AppRouter() {
   return (
@@ -26,7 +26,8 @@ export default function AppRouter() {
         {/* Rutas Protegidas (solo accesibles si ESTÁS logeado) */}
 
         {/* Módulos solo para administradores (antiguos usuarios regulares) */}
-        <Route element={<ProtectedRoute allowedRoles={['ROLE_USER']} />}>
+        <Route element={<ProtectedRoute allowedRoles={['ROLE_ADMIN']} />}>
+          <Route path="/admin/usuarios" element={<UsersList />} />
           <Route path="/admin/registro" element={<UserSignup />} />
           <Route path="/admin/panel" element={<UserDashboard />} />
         </Route>
