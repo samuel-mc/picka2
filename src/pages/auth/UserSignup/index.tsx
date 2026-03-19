@@ -5,9 +5,9 @@ import "./styles.css";
 import { RegisterInput } from "../../../components/common/RegisterInput";
 import { Loading } from "../../../components/common/Loading";
 import { useState } from "react";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
+import { useApi } from "../../../hooks/useApi";
 
 type Inputs = {
   name: string;
@@ -38,10 +38,7 @@ export const UserSignup = () => {
     password: data.password,
   });
 
-  const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    headers: { "Content-Type": "application/json" },
-  });
+  const api = useApi();
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
@@ -50,7 +47,7 @@ export const UserSignup = () => {
       const payload = formatFormData(data);
       await api.post("/auth/register-user", payload);
       toast.success("Usuario creado correctamente");
-      navigate("/user/login", { replace: true });
+      navigate("/admin/usuarios", { replace: true });
     } catch (error: any) {
       console.error("Error en registro:", error);
       toast.error(
