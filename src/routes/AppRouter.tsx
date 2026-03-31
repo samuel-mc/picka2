@@ -4,6 +4,7 @@ import { UserSignup } from '../pages/auth/UserSignup';
 import { TipsterSignup } from '../pages/auth/TipsterSignup';
 import { TipsterLogin } from '../pages/auth/TipsterLogin';
 import { UserLogin } from '../pages/auth/UserLogin';
+import { VerifyEmail } from '../pages/auth/VerifyEmail';
 import { UserDashboard } from '../pages/admin/UsersDashboard';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
@@ -21,6 +22,7 @@ export default function AppRouter() {
           <Route path="/admin/login" element={<UserLogin />} />
           <Route path="/login" element={<TipsterLogin />} />
           <Route path="/registro" element={<TipsterSignup />} />
+          <Route path="/auth/verify-email" element={<VerifyEmail />} />
         </Route>
 
         {/* Rutas Protegidas (solo accesibles si ESTÁS logeado) */}

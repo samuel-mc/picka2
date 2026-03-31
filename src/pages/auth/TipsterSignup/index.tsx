@@ -55,7 +55,7 @@ export const TipsterSignup = () => {
       const payload = formatFormData(data);
       await api.post("/auth/register-tipster", payload);
       toast.success("Tipster creado correctamente", { duration: 5000 });
-      navigate("/user/login", { replace: true });
+      navigate("/login", { replace: true });
     } catch (error: any) {
       console.error("Error en registro:", error);
       toast.error(
