@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { clearAuthSession, getAuthToken } from "@/lib/auth";
 
 export const useApi = () => {
   const navigate = useNavigate();
@@ -13,7 +14,7 @@ export const useApi = () => {
 
     instance.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem("token");
+        const token = getAuthToken();
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -30,10 +31,7 @@ export const useApi = () => {
       },
       (error) => {
         if (error.response && error.response.status === 401) {
-          localStorage.removeItem("token");
-          localStorage.removeItem("role");
-          sessionStorage.removeItem("token");
-          sessionStorage.removeItem("role");
+          clearAuthSession();
           navigate("/");
         }
         return Promise.reject(error);

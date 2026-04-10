@@ -5,6 +5,8 @@ import { TipsterSignup } from '../pages/auth/TipsterSignup';
 import { TipsterLogin } from '../pages/auth/TipsterLogin';
 import { UserLogin } from '../pages/auth/UserLogin';
 import { VerifyEmail } from '../pages/auth/VerifyEmail';
+import { RequestPasswordReset } from '../pages/auth/RequestPasswordReset';
+import { ResetPassword } from '../pages/auth/ResetPassword';
 import { UserDashboard } from '../pages/admin/UsersDashboard';
 import { ProtectedRoute } from './ProtectedRoute';
 import { PublicRoute } from './PublicRoute';
@@ -22,6 +24,8 @@ export default function AppRouter() {
           <Route path="/admin/login" element={<UserLogin />} />
           <Route path="/login" element={<TipsterLogin />} />
           <Route path="/registro" element={<TipsterSignup />} />
+          <Route path="/recuperar-contrasenia" element={<RequestPasswordReset />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/auth/verify-email" element={<VerifyEmail />} />
         </Route>
 

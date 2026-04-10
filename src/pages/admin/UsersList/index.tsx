@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/common/ui/button";
 import { MoreHorizontal, Edit, Trash, UserMinus, UserCheck, Plus, X } from "lucide-react";
+import { useAuthStore } from "@/stores/authStore";
 
 interface AdminUser {
   id: number;
@@ -31,6 +32,7 @@ interface AdminUser {
 
 export const UsersList = () => {
   const navigate = useNavigate();
+  const token = useAuthStore((state) => state.token);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,7 +47,6 @@ export const UsersList = () => {
   const fetchAdmins = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
       const res = await fetch(import.meta.env.VITE_API_URL + "/users/admins", {
         headers: {
           "Content-Type": "application/json",
@@ -66,7 +67,6 @@ export const UsersList = () => {
   const confirmDelete = async () => {
     if (deletingUserId === null) return;
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(import.meta.env.VITE_API_URL + `/users/${deletingUserId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
@@ -83,7 +83,6 @@ export const UsersList = () => {
 
   const handleToggleActive = async (user: AdminUser) => {
     try {
-      const token = localStorage.getItem("token");
       const isCurrentlyActive = user.active; 
       
       const res = await fetch(import.meta.env.VITE_API_URL + `/users/${user.id}/inactivate`, {
@@ -120,7 +119,6 @@ export const UsersList = () => {
   const handleUpdateUser = async () => {
     if (!editingUser) return;
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(import.meta.env.VITE_API_URL + `/users/${editingUser.id}`, {
         method: "PUT",
         headers: {

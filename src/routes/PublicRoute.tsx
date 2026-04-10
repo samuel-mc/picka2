@@ -1,15 +1,13 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { useAuthStore } from '@/stores/authStore';
 
 export const PublicRoute = () => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
-  
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.role);
 
-  // Si el usuario esta loggeado y es admin, se envia al dashboard
   if (token && role === 'ROLE_ADMIN') {
     return <Navigate to="/admin/panel" replace />;
   }
 
-  // Si no hay token, renderizar los componentes hijos (como login o signup)
   return <Outlet />;
 };

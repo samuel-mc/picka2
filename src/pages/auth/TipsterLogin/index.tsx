@@ -23,10 +23,11 @@ export const TipsterLogin = () => {
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const username = data.username?.trim()?.toLowerCase();
     // Redirect tipsters to user dashboard for now (can be changed to /tipster/dashboard if it exists later)
-    await login(username, data.password);
-    if (error) {
-      toast.error(error);
-    } 
+    try {
+      await login(username, data.password);
+    } catch (err: any) {
+      toast.error(err.message ?? error);
+    }
   };
   
   return (
@@ -56,6 +57,14 @@ export const TipsterLogin = () => {
                   type="password"
                   required
                 />
+                <div className="mt-1 text-right">
+                  <Link
+                    to="/recuperar-contrasenia"
+                    className="text-primaryBlue hover:underline font-semibold"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
                 <input
                   type="submit"
                   value="Enviar"

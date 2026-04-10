@@ -8,6 +8,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useApi } from "../../../hooks/useApi";
+import { buildPasswordValidation } from "../../../lib/passwordValidation";
 
 type Inputs = {
   name: string;
@@ -141,16 +142,7 @@ export const UserSignup = () => {
               fieldError={errors.password}
               type="password"
               required
-              validation={{
-                minLength: {
-                  value: 8,
-                  message: "Debe tener al menos 8 caracteres",
-                },
-                pattern: {
-                  value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/,
-                  message: "Debe incluir mayúsculas, minúsculas y números",
-                },
-              }}
+              validation={buildPasswordValidation<Inputs>()}
             />
             <RegisterInput<Inputs>
               name="passwordConfirm"

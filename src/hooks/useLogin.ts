@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/stores/authStore";
 
 export function useLogin() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+  const clearAuth = useAuthStore((state) => state.clearAuth);
 
   const login = async (
     username: string, 
@@ -25,22 +28,20 @@ export function useLogin() {
       if (!res.ok) throw new Error("Credenciales incorrectas");
 
       const data = await res.json();
-      localStorage.setItem("token", data.token);
-      // Solo agregar el ROL a local storage si es un admin
-      if (data != null && data.role != null && data.role === "ROLE_ADMIN") {
-        localStorage.setItem("role", data.role);
-      }
+      setAuth(data.token, data?.role);
       setIsLoading(false);
       navigate(redirectPath);
+      return data;
     } catch (err: any) {
       setIsLoading(false);
-      setError(err.message);
+      const message = err.message ?? "No fue posible iniciar sesión";
+      setError(message);
+      throw new Error(message);
     }
   };
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    clearAuth();
     navigate("/login");
   };
 

@@ -1,3 +1,29 @@
+.tipster-signup-shell {
+  background:
+    radial-gradient(circle at top left, rgb(19 70 134 / 0.14), transparent 32%),
+    radial-gradient(circle at bottom right, rgb(254 178 26 / 0.16), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #eef4ff 100%);
+}
+
+.tipster-signup-hero {
+  background:
+    radial-gradient(circle at top, rgb(253 244 227 / 0.18), transparent 32%),
+    linear-gradient(145deg, var(--color-primaryBlue) 0%, var(--color-secondaryBlue) 58%, var(--color-accentBlue) 100%);
+}
+
+.tipster-signup-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  padding: 0.95rem 1rem;
+  backdrop-filter: blur(10px);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 textarea {
-    resize: none;
+  resize: none;
 }

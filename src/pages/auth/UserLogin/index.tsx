@@ -25,11 +25,11 @@ export const UserLogin = () => {
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     const username = data.username?.trim()?.toLowerCase();
-    await login(username, data.password, "/admin/panel");
-    if (error) {
-      toast.error(error);
-    } 
-
+    try {
+      await login(username, data.password, "/admin/panel");
+    } catch (err: any) {
+      toast.error(err.message ?? error);
+    }
   };
   
   return (

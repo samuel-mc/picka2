@@ -2,14 +2,15 @@ import { Link } from 'react-router-dom';
 import logo from "../../../assets/logo.png";
 import './styles.css';
 import { useLogin } from '@/hooks/useLogin';
+import { useAuthStore } from '@/stores/authStore';
 
 interface TipsterHeaderProps {
   isFixed?: boolean;
 }
 
 const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
-  const token = localStorage.getItem('token');
-  const role = localStorage.getItem('role');
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.role);
 
   const {logout} = useLogin();
 
