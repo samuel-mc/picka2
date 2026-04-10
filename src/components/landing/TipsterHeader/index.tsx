@@ -25,11 +25,19 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
         {token ? (
           <>
             <Link 
-              to={role === 'ROLE_ADMIN' ? "/admin/panel" : "/tipster/dashboard"} 
+              to={role === 'ROLE_ADMIN' ? "/admin/panel" : "/tipster/perfil"} 
               className="text-light hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
-              Dashboard
+              {role === 'ROLE_ADMIN' ? 'Panel' : 'Mi perfil'}
             </Link>
+            {role === 'ROLE_ADMIN' && (
+              <Link
+                to="/admin/perfil"
+                className="text-light hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Mi perfil
+              </Link>
+            )}
             <button
               onClick={logout}
               className="bg-white text-primaryBlue px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors shadow-sm"

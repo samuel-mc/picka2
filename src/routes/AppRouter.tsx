@@ -13,6 +13,11 @@ import { PublicRoute } from './PublicRoute';
 
 import Landing from '../pages/landing';
 import { UsersList } from '@/pages/admin/UsersList';
+import { MiPerfilPage } from '@/pages/profile/MiPerfil';
+import { SportsCatalogPage } from '@/pages/admin/catalogs/SportsCatalog';
+import { CountriesCatalogPage } from '@/pages/admin/catalogs/CountriesCatalog';
+import { CompetitionsCatalogPage } from '@/pages/admin/catalogs/CompetitionsCatalog';
+import { TeamsCatalogPage } from '@/pages/admin/catalogs/TeamsCatalog';
 
 export default function AppRouter() {
   return (
@@ -36,12 +41,17 @@ export default function AppRouter() {
           <Route path="/admin/usuarios" element={<UsersList />} />
           <Route path="/admin/registro" element={<UserSignup />} />
           <Route path="/admin/panel" element={<UserDashboard />} />
+          <Route path="/admin/perfil" element={<MiPerfilPage />} />
+          <Route path="/admin/catalogos/deportes" element={<SportsCatalogPage />} />
+          <Route path="/admin/catalogos/paises" element={<CountriesCatalogPage />} />
+          <Route path="/admin/catalogos/competiciones" element={<CompetitionsCatalogPage />} />
+          <Route path="/admin/catalogos/equipos" element={<TeamsCatalogPage />} />
         </Route>
 
         {/* Módulos solo para tipsters (Ejemplo) */}
         {/* Descomenta y agrega tus componentes cuando los tengas */}
         <Route element={<ProtectedRoute allowedRoles={['ROLE_TIPSTER']} />}>
-          {/* <Route path="/tipster/dashboard" element={<TipsterDashboard />} /> */}
+          <Route path="/tipster/perfil" element={<MiPerfilPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

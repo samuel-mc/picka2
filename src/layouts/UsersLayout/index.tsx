@@ -1,7 +1,14 @@
 import React from "react";
 import { UserSidebar } from "../../components/user/UserSidebar";
 import type { LinkModel } from "../../models/LinkModel";
-import { House, Users } from "lucide-react";
+import {
+  Flag,
+  House,
+  MapPinned,
+  Shield,
+  Trophy,
+  Users,
+} from "lucide-react";
 
 import "./styles.css";
 
@@ -23,6 +30,36 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
       link: "/admin/usuarios",
       icon: Users,
     },
+    {
+      id: 3,
+      name: "Deportes",
+      link: "/admin/catalogos/deportes",
+      icon: Shield,
+    },
+    {
+      id: 4,
+      name: "Países",
+      link: "/admin/catalogos/paises",
+      icon: Flag,
+    },
+    {
+      id: 5,
+      name: "Competiciones",
+      link: "/admin/catalogos/competiciones",
+      icon: Trophy,
+    },
+    {
+      id: 6,
+      name: "Equipos",
+      link: "/admin/catalogos/equipos",
+      icon: MapPinned,
+    },
+    // {
+    //   id: 7,
+    //   name: "Mi perfil",
+    //   link: "/admin/perfil",
+    //   icon: UserCircle,
+    // },
   ];
   return (
     <div className="users__layout bg-gray-100 py-6 px-5">

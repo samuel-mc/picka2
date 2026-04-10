@@ -20,8 +20,15 @@ type Inputs = {
   email: string;
   password: string;
   passwordConfirm: string;
+  birthDate: string;
   bio: string;
   // avatarUrl is handled internally for now, but we can add it here if needed
+};
+
+const getAdultBirthDateLimit = () => {
+  const today = new Date();
+  today.setFullYear(today.getFullYear() - 18);
+  return today.toISOString().split("T")[0];
 };
 
 export const TipsterSignup = () => {
@@ -42,6 +49,7 @@ export const TipsterSignup = () => {
   });
 
   const passwordValue = watch("password");
+  const maxBirthDate = getAdultBirthDateLimit();
 
   useEffect(() => {
     void trigger("passwordConfirm");
@@ -53,6 +61,7 @@ export const TipsterSignup = () => {
     username: data.username?.trim().toLowerCase(),
     email: data.email?.trim().toLowerCase(),
     password: data.password,
+    birthDate: data.birthDate,
     bio: data.bio?.trim(),
     avatarUrl: "/register-tipster", // dummy value as requested
   });
@@ -224,6 +233,18 @@ export const TipsterSignup = () => {
                       value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                       message: "Correo inválido",
                     },
+                  }}
+                />
+                <RegisterInput<Inputs>
+                  name="birthDate"
+                  label="Fecha de nacimiento"
+                  register={register}
+                  fieldError={errors.birthDate}
+                  type="date"
+                  required
+                  validation={{
+                    validate: (value) =>
+                      value <= maxBirthDate || "Debes ser mayor de 18 años para registrarte como tipster",
                   }}
                 />
                 <RegisterInput<Inputs>

@@ -28,7 +28,13 @@ export function useLogin() {
       if (!res.ok) throw new Error("Credenciales incorrectas");
 
       const data = await res.json();
-      setAuth(data.token, data?.role);
+      const uid =
+        typeof data.userId === "number"
+          ? data.userId
+          : data.userId != null
+            ? Number(data.userId)
+            : null;
+      setAuth(data.token, data?.role, Number.isFinite(uid) ? uid : null);
       setIsLoading(false);
       navigate(redirectPath);
       return data;
