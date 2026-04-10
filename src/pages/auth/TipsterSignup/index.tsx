@@ -70,11 +70,18 @@ export const TipsterSignup = () => {
       await api.post("/auth/register-tipster", payload);
       toast.success("Tipster creado correctamente", { duration: 5000 });
       navigate("/login", { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error en registro:", error);
-      toast.error(
-        error?.response?.data?.message || "Error al generar el tipster"
-      );
+      const apiMessage =
+        axios.isAxiosError(error) &&
+        error.response?.data &&
+        typeof error.response.data === "object" &&
+        "message" in error.response.data
+          ? String(
+              (error.response.data as { message?: unknown }).message ?? ""
+            )
+          : "";
+      toast.error(apiMessage || "Error al generar el tipster");
     } finally {
       setIsLoading(false);
     }
