@@ -424,7 +424,7 @@ function StatChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-3xl bg-white p-3 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <p className="mt-2 break-words text-sm font-medium text-slate-700">{value}</p>
+      <p className="mt-2 wrap-break-word text-sm font-medium text-slate-700">{value}</p>
     </div>
   );
 }

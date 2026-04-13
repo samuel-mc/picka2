@@ -57,6 +57,7 @@ export function PostComposer({
 }: Props) {
   const {
     register,
+    setValue,
     watch,
     handleSubmit,
     reset,
@@ -86,11 +87,13 @@ export function PostComposer({
 
   const selectedType = watch("type");
   const selectedSimpleSportId = watch("simplePick.sportId");
+  const selectedSimpleLeagueId = watch("simplePick.leagueId");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [selectedParleyCompetitionIds, setSelectedParleyCompetitionIds] = useState<number[]>([]);
+  const [selectedParleySportId, setSelectedParleySportId] = useState<string>("");
   const [parleySelectionError, setParleySelectionError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,6 +109,11 @@ export function PostComposer({
       competition.active &&
       (selectedSimpleSportId ? String(competition.sportId) === String(selectedSimpleSportId) : true)
   );
+  const visibleParleyCompetitions = competitions.filter(
+    (competition) =>
+      competition.active &&
+      (selectedParleySportId ? String(competition.sportId) === String(selectedParleySportId) : true)
+  );
   const parleyCompetitionGroups = sports
     .filter((sport) => sport.active)
     .map((sport) => ({
@@ -115,6 +123,40 @@ export function PostComposer({
       ),
     }))
     .filter((group) => group.competitions.length > 0);
+  const selectedParleyCompetitions = selectedParleyCompetitionIds
+    .map((competitionId) => competitions.find((competition) => competition.id === competitionId))
+    .filter((competition): competition is CompetitionItem => competition != null);
+
+  useEffect(() => {
+    if (!selectedSimpleSportId) {
+      if (selectedSimpleLeagueId) {
+        setValue("simplePick.leagueId", "");
+      }
+      return;
+    }
+
+    const currentLeagueIsValid = visibleSimpleCompetitions.some(
+      (competition) => String(competition.id) === String(selectedSimpleLeagueId)
+    );
+
+    if (!currentLeagueIsValid) {
+      setValue("simplePick.leagueId", visibleSimpleCompetitions[0]?.id?.toString() ?? "");
+    }
+  }, [
+    selectedSimpleSportId,
+    selectedSimpleLeagueId,
+    setValue,
+    visibleSimpleCompetitions,
+  ]);
+
+  useEffect(() => {
+    const validCompetitionIds = new Set(
+      competitions.filter((competition) => competition.active).map((competition) => competition.id)
+    );
+    setSelectedParleyCompetitionIds((current) =>
+      current.filter((competitionId) => validCompetitionIds.has(competitionId))
+    );
+  }, [competitions]);
 
   const submitForm = handleSubmit(async (values) => {
     let uploadedImageKey: string | null = null;
@@ -188,6 +230,7 @@ export function PostComposer({
     setPreviewUrl(null);
     setSelectedFile(null);
     setImageError(null);
+    setSelectedParleySportId("");
     setSelectedParleyCompetitionIds([]);
     setParleySelectionError(null);
     reset({
@@ -450,7 +493,7 @@ export function PostComposer({
                   <div>
                     <p className="text-sm font-semibold text-slate-900">Selecciones del parley</p>
                     <p className="text-xs text-slate-500">
-                      Puedes elegir varias ligas de uno o varios deportes.
+                      Elige un deporte y selecciona una o varias ligas desde la lista.
                     </p>
                   </div>
                   <span className="rounded-full bg-[#edf5fb] px-3 py-1 text-xs font-semibold text-[#0f4c81]">
@@ -458,12 +501,35 @@ export function PostComposer({
                   </span>
                 </div>
 
-                <div className="space-y-4">
-                  {parleyCompetitionGroups.map((group) => (
-                    <div key={group.sport.id} className="space-y-2">
-                      <p className="text-sm font-semibold text-slate-800">{group.sport.name}</p>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {group.competitions.map((competition) => {
+                <div className="grid gap-4 md:grid-cols-2">
+                  <Field label="Deporte">
+                    <select
+                      value={selectedParleySportId}
+                      onChange={(event) => setSelectedParleySportId(event.target.value)}
+                      className={inputClassName}
+                    >
+                      <option value="">Selecciona deporte</option>
+                      {parleyCompetitionGroups.map((group) => (
+                        <option key={group.sport.id} value={group.sport.id}>
+                          {group.sport.name}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <Field label="Liga">
+                    <div
+                      className={`space-y-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 ${
+                        !selectedParleySportId || visibleParleyCompetitions.length === 0
+                          ? "opacity-60"
+                          : ""
+                      }`}
+                    >
+                      {!selectedParleySportId ? (
+                        <p className="text-sm text-slate-500">Selecciona un deporte primero.</p>
+                      ) : visibleParleyCompetitions.length === 0 ? (
+                        <p className="text-sm text-slate-500">No hay ligas disponibles para este deporte.</p>
+                      ) : (
+                        visibleParleyCompetitions.map((competition) => {
                           const checked = selectedParleyCompetitionIds.includes(competition.id);
                           return (
                             <label
@@ -485,10 +551,37 @@ export function PostComposer({
                               </span>
                             </label>
                           );
-                        })}
-                      </div>
+                        })
+                      )}
                     </div>
-                  ))}
+                  </Field>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {selectedParleyCompetitions.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 px-4 py-5 text-sm text-slate-500">
+                      Aun no agregas ligas al parley.
+                    </div>
+                  ) : (
+                    selectedParleyCompetitions.map((competition) => (
+                      <div
+                        key={competition.id}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-[#d5e3ef] bg-[#f8fbfd] px-4 py-3"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">{competition.name}</p>
+                          <p className="text-xs text-slate-500">{competition.sportName}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => toggleParleyCompetition(competition.id)}
+                          className="text-sm font-semibold text-[#0f4c81] transition hover:text-[#0c3d67]"
+                        >
+                          Quitar
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
 
                 {parleySelectionError && (
