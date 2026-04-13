@@ -4,6 +4,7 @@ import type { LinkModel } from "../../models/LinkModel";
 import {
   Flag,
   House,
+  MessageSquareQuote,
   MapPinned,
   Shield,
   Trophy,
@@ -53,6 +54,12 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
       name: "Equipos",
       link: "/admin/catalogos/equipos",
       icon: MapPinned,
+    },
+    {
+      id: 7,
+      name: "Home Prashes",
+      link: "/admin/catalogos/home-prashes",
+      icon: MessageSquareQuote,
     },
     // {
     //   id: 7,

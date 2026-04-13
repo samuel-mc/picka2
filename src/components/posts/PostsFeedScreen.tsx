@@ -1,0 +1,482 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
+import { Filter, Plus, RefreshCcw, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useApi } from "@/hooks/useApi";
+import { getAuthUserId } from "@/lib/auth";
+import { PostComposer } from "@/components/posts/PostComposer";
+import { PostCard } from "@/components/posts/PostCard";
+import type { ApiResponse, CatalogItem, CompetitionItem } from "@/types/catalog";
+import type {
+  CommentItem,
+  CreatePostPayload,
+  PagedResponse,
+  PostItem,
+  PostMetrics,
+  ReactionType,
+  ResultStatus,
+  Sportsbook,
+} from "@/types/posts";
+
+export function PostsFeedScreen() {
+  const api = useApi();
+  const navigate = useNavigate();
+  const currentUserId = useMemo(() => getAuthUserId(), []);
+  const [posts, setPosts] = useState<PostItem[]>([]);
+  const [sports, setSports] = useState<CatalogItem[]>([]);
+  const [competitions, setCompetitions] = useState<CompetitionItem[]>([]);
+  const [sportsbooks, setSportsbooks] = useState<Sportsbook[]>([]);
+  const [homePrashe, setHomePrashe] = useState(
+    ""
+  );
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [authorFilter, setAuthorFilter] = useState<number | null>(null);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [showFloatingComposerButton, setShowFloatingComposerButton] = useState(false);
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  const applyFeedResponse = useCallback(
+    (response: PagedResponse<PostItem>, append = false) => {
+      setPosts((current) => (append ? [...current, ...response.items] : response.items));
+      setPage(response.page);
+      setHasNext(response.hasNext);
+    },
+    []
+  );
+
+  const loadFeed = useCallback(
+    async (nextPage = 0, append = false, authorId: number | null = authorFilter) => {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      try {
+        const endpoint = authorId != null ? `/posts/users/${authorId}` : "/posts/feed";
+        const { data } = await api.get<ApiResponse<PagedResponse<PostItem>>>(endpoint, {
+          params: { page: nextPage, size: 10 },
+        });
+        applyFeedResponse(data.data, append);
+      } catch {
+        toast.error("No se pudo cargar el feed.");
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [api, applyFeedResponse, authorFilter]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [sportsResponse, competitionsResponse, sportsbookResponse, homePrashesResponse] = await Promise.all([
+          api.get<ApiResponse<CatalogItem[]>>("/catalogs/sports"),
+          api.get<ApiResponse<CompetitionItem[]>>("/catalogs/competitions"),
+          api.get<ApiResponse<Sportsbook[]>>("/sportsbooks"),
+          api.get<ApiResponse<CatalogItem>>("/catalogs/generate-home-prashe"),
+        ]);
+        if (!cancelled) {
+          setSports(sportsResponse.data.data);
+          setCompetitions(competitionsResponse.data.data);
+          setSportsbooks(sportsbookResponse.data.data);
+          const activePhrase = homePrashesResponse.data.data?.name;
+          if (activePhrase) {
+            setHomePrashe(activePhrase);
+          }
+        }
+      } catch {
+        if (!cancelled) {
+          toast.error("No se pudo cargar el catálogo de casas de apuesta.");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api]);
+
+  useEffect(() => {
+    void loadFeed(0, false, authorFilter);
+  }, [authorFilter, loadFeed]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowFloatingComposerButton(window.scrollY > 280);
+    };
+
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const syncViewport = (event?: MediaQueryListEvent) => {
+      setIsMobileViewport(event ? event.matches : mediaQuery.matches);
+    };
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
+  }, []);
+
+  const updatePost = useCallback((postId: number, updater: (current: PostItem) => PostItem) => {
+    setPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
+  }, []);
+
+  const handleCreatePost = useCallback(
+    async (payload: CreatePostPayload) => {
+      setSubmitting(true);
+      try {
+        const { data } = await api.post<ApiResponse<PostItem>>("/posts", payload);
+        setPosts((current) => [data.data, ...current]);
+        setIsComposerOpen(false);
+        toast.success("Post publicado.");
+      } catch (error: unknown) {
+        const message =
+          (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "No se pudo publicar el post.";
+        toast.error(message);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [api]
+  );
+
+  const handleUploadImage = useCallback(
+    async (file: File) => {
+      const presignRes = await api.post<{ uploadUrl: string; objectKey: string }>(
+        "/posts/media/presign",
+        { contentType: file.type }
+      );
+      const { uploadUrl, objectKey } = presignRes.data;
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": file.type },
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error("No se pudo subir la imagen al almacenamiento.");
+      }
+
+      const completeRes = await api.post<ApiResponse<{ objectKey: string; mediaUrl: string }>>(
+        "/posts/media/complete",
+        { objectKey }
+      );
+
+      return completeRes.data.data;
+    },
+    [api]
+  );
+
+  const handleReaction = useCallback(
+    async (postId: number, type: ReactionType) => {
+      try {
+        const { data } = await api.put<ApiResponse<PostMetrics>>(`/posts/${postId}/reaction`, {
+          type,
+        });
+        updatePost(postId, (current) => ({ ...current, metrics: data.data }));
+        return data.data;
+      } catch {
+        toast.error("No se pudo registrar la reacción.");
+        return null;
+      }
+    },
+    [api, updatePost]
+  );
+
+  const handleSave = useCallback(
+    async (postId: number) => {
+      try {
+        const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${postId}/save`);
+        updatePost(postId, (current) => ({
+          ...current,
+          metrics: {
+            ...current.metrics,
+            savedByCurrentUser: data.data.active,
+            savesCount: Math.max(0, current.metrics.savesCount + (data.data.active ? 1 : -1)),
+          },
+        }));
+        return data.data.active;
+      } catch {
+        toast.error("No se pudo actualizar el guardado.");
+        return null;
+      }
+    },
+    [api, updatePost]
+  );
+
+  const handleRepost = useCallback(
+    async (postId: number) => {
+      try {
+        const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${postId}/repost`);
+        updatePost(postId, (current) => ({
+          ...current,
+          metrics: {
+            ...current.metrics,
+            repostedByCurrentUser: data.data.active,
+            repostsCount: Math.max(0, current.metrics.repostsCount + (data.data.active ? 1 : -1)),
+          },
+        }));
+        return data.data.active;
+      } catch {
+        toast.error("No se pudo actualizar el repost.");
+        return null;
+      }
+    },
+    [api, updatePost]
+  );
+
+  const handleShare = useCallback(
+    async (postId: number) => {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title: "Picka post", text: "Mira este post de tipster" });
+        }
+      } catch {
+        // ignore cancellation
+      }
+
+      try {
+        const { data } = await api.post<ApiResponse<PostMetrics>>(`/posts/${postId}/share`, {
+          channel: "WEB",
+        });
+        updatePost(postId, (current) => ({ ...current, metrics: data.data }));
+        toast.success("Share registrado.");
+        return data.data;
+      } catch {
+        toast.error("No se pudo registrar el share.");
+        return null;
+      }
+    },
+    [api, updatePost]
+  );
+
+  const handleLoadComments = useCallback(
+    async (postId: number) => {
+      const { data } = await api.get<ApiResponse<CommentItem[]>>(`/posts/${postId}/comments`);
+      return data.data;
+    },
+    [api]
+  );
+
+  const handleComment = useCallback(
+    async (postId: number, content: string) => {
+      try {
+        const { data } = await api.post<ApiResponse<CommentItem>>(`/posts/${postId}/comments`, {
+          content,
+        });
+        updatePost(postId, (current) => ({
+          ...current,
+          metrics: {
+            ...current.metrics,
+            commentsCount: current.metrics.commentsCount + 1,
+          },
+        }));
+        return data.data;
+      } catch {
+        toast.error("No se pudo comentar el post.");
+        return null;
+      }
+    },
+    [api, updatePost]
+  );
+
+  const handleUpdatePickStatus = useCallback(
+    async (postId: number, resultStatus: ResultStatus) => {
+      try {
+        const { data } = await api.put<ApiResponse<PostItem>>(`/posts/${postId}/pick-status`, {
+          resultStatus,
+        });
+        updatePost(postId, () => data.data);
+        toast.success("Estado del pick actualizado.");
+      } catch {
+        toast.error("No se pudo actualizar el estado.");
+      }
+    },
+    [api, updatePost]
+  );
+
+  const handleRegisterView = useCallback(
+    async (postId: number) => {
+      try {
+        await api.post(`/posts/${postId}/views`);
+      } catch {
+        // ignore
+      }
+    },
+    [api]
+  );
+
+  const handleViewProfile = useCallback((authorId: number) => {
+    navigate(`/tipster/perfil/${authorId}`);
+  }, [navigate]);
+
+  const clearAuthorFilter = useCallback(() => {
+    setAuthorFilter(null);
+  }, []);
+
+  const openComposer = useCallback(() => {
+    if (isMobileViewport) {
+      navigate("/tipster/posts/nuevo");
+      return;
+    }
+
+    setIsComposerOpen(true);
+  }, [isMobileViewport, navigate]);
+
+  return (
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(237,95,47,0.22),_transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-4xl space-y-6">
+        <section className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-white/70 bg-white/80 px-5 py-4 shadow-[0_14px_40px_rgba(15,76,129,0.08)] backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="rounded-2xl bg-[#edf5fb] p-3 text-[#0f4c81]">
+                <Filter className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">
+                  {authorFilter != null ? `Viendo posts del autor #${authorFilter}` : "Feed general"}
+                </p>
+                <p className="text-sm text-slate-500">
+                  {authorFilter != null
+                    ? "Puedes volver al feed principal cuando quieras."
+                    : "Timeline listo para análisis, picks simples y parleys."}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={openComposer}
+                className="inline-flex items-center gap-2 rounded-full bg-[#ed5f2f] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(237,95,47,0.22)] transition hover:bg-[#d95225]"
+              >
+                <Plus className="h-4 w-4" />
+                Nuevo post
+              </button>
+              {authorFilter != null && (
+                <button
+                  type="button"
+                  onClick={clearAuthorFilter}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+                >
+                  Limpiar filtro
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => void loadFeed(0, false, authorFilter)}
+                className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-4 py-2 text-sm font-semibold text-white"
+              >
+                <RefreshCcw className="h-4 w-4" />
+                Refrescar
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
+              Cargando feed...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
+              Todavía no hay publicaciones para este filtro.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  currentUserId={currentUserId}
+                  onViewProfile={handleViewProfile}
+                  onToggleReaction={handleReaction}
+                  onToggleSave={handleSave}
+                  onToggleRepost={handleRepost}
+                  onShare={handleShare}
+                  onLoadComments={handleLoadComments}
+                  onComment={handleComment}
+                  onUpdatePickStatus={handleUpdatePickStatus}
+                  onRegisterView={handleRegisterView}
+                />
+              ))}
+              {hasNext && (
+                <div className="flex justify-center">
+                  <button
+                    type="button"
+                    disabled={loadingMore}
+                    onClick={() => void loadFeed(page + 1, true, authorFilter)}
+                    className="rounded-full bg-[#ed5f2f] px-6 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-60"
+                  >
+                    {loadingMore ? "Cargando..." : "Cargar más"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {showFloatingComposerButton && !isComposerOpen && (
+        <button
+          type="button"
+          onClick={openComposer}
+          className="fixed bottom-6 right-6 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#ed5f2f] text-white shadow-[0_20px_40px_rgba(237,95,47,0.32)] transition hover:bg-[#d95225] sm:bottom-8 sm:right-8"
+          aria-label="Crear nuevo post"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      )}
+
+      {isComposerOpen && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-4 py-6 sm:items-center sm:px-6">
+          <div className="relative w-full max-w-4xl rounded-[2rem] bg-[#eef5fa] p-3 shadow-[0_30px_90px_rgba(13,38,76,0.32)] sm:p-5">
+            <button
+              type="button"
+              onClick={() => setIsComposerOpen(false)}
+              className="absolute right-6 top-6 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/65 bg-white/90 text-slate-600 shadow-sm transition hover:text-slate-900"
+              aria-label="Cerrar modal de publicación"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="max-h-[calc(100vh-3rem)] overflow-y-auto rounded-[1.6rem]">
+              <div className="space-y-6">
+                <div className="rounded-[2.2rem] bg-[#0d2f4f] p-7 pr-20 text-white shadow-[0_30px_80px_rgba(13,47,79,0.28)]">
+                  <p className="text-sm uppercase tracking-[0.28em] text-[#9dc4e6]">Tipster Network</p>
+                  <h1 className="mt-3 text-4xl font-black leading-tight">{homePrashe}</h1>
+                </div>
+
+                <PostComposer
+                  sports={sports}
+                  competitions={competitions}
+                  sportsbooks={sportsbooks}
+                  submitting={submitting}
+                  onSubmit={handleCreatePost}
+                  onUploadImage={handleUploadImage}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
+  );
+}

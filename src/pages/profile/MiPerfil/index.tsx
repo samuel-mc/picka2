@@ -6,12 +6,16 @@ import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/common/ui/button";
 import { Loading } from "@/components/common/Loading";
 import { getAuthToken } from "@/lib/auth";
+import type { ApiResponse, CompetitionItem, TeamItem } from "@/types/catalog";
 import {
+  Check,
   Camera,
   ImageUp,
   LoaderCircle,
   Mail,
+  ShieldCheck,
   Sparkles,
+  Trophy,
   UserRound,
 } from "lucide-react";
 
@@ -23,6 +27,8 @@ interface MeProfile {
   email: string;
   bio: string | null;
   avatarUrl: string | null;
+  preferredCompetitions: CompetitionItem[];
+  preferredTeams: TeamItem[];
 }
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -52,6 +58,10 @@ function MiPerfilForm() {
   const [name, setName] = useState("");
   const [lastname, setLastname] = useState("");
   const [bio, setBio] = useState("");
+  const [competitions, setCompetitions] = useState<CompetitionItem[]>([]);
+  const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [selectedCompetitionIds, setSelectedCompetitionIds] = useState<number[]>([]);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<number[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [avatarError, setAvatarError] = useState<string | null>(null);
@@ -65,6 +75,8 @@ function MiPerfilForm() {
     setName(p.name ?? "");
     setLastname(p.lastname ?? "");
     setBio(p.bio ?? "");
+    setSelectedCompetitionIds(p.preferredCompetitions?.map((competition) => competition.id) ?? []);
+    setSelectedTeamIds(p.preferredTeams?.map((team) => team.id) ?? []);
   }, []);
 
   useEffect(() => {
@@ -72,8 +84,16 @@ function MiPerfilForm() {
     (async () => {
       setLoadError(null);
       try {
-        const { data } = await api.get<MeProfile>("/me/profile");
-        if (!cancelled) applyProfile(data);
+        const [profileResponse, competitionsResponse, teamsResponse] = await Promise.all([
+          api.get<MeProfile>("/me/profile"),
+          api.get<ApiResponse<CompetitionItem[]>>("/catalogs/competitions"),
+          api.get<ApiResponse<TeamItem[]>>("/catalogs/teams"),
+        ]);
+        if (!cancelled) {
+          applyProfile(profileResponse.data);
+          setCompetitions(competitionsResponse.data.data.filter((competition) => competition.active));
+          setTeams(teamsResponse.data.data.filter((team) => team.active));
+        }
       } catch {
         if (!cancelled) setLoadError("No se pudo cargar el perfil.");
       }
@@ -92,6 +112,15 @@ function MiPerfilForm() {
   }, [avatarPreviewUrl]);
 
   const avatarSrc = avatarPreviewUrl ?? profile?.avatarUrl ?? null;
+  const selectedCompetitionIdsSet = useMemo(
+    () => new Set(selectedCompetitionIds),
+    [selectedCompetitionIds]
+  );
+  const selectedTeamIdsSet = useMemo(() => new Set(selectedTeamIds), [selectedTeamIds]);
+  const visibleTeams = useMemo(() => {
+    if (selectedCompetitionIds.length === 0) return teams;
+    return teams.filter((team) => selectedCompetitionIdsSet.has(team.competitionId));
+  }, [selectedCompetitionIds.length, selectedCompetitionIdsSet, teams]);
   const initials = useMemo(() => {
     const fullName = [name || profile?.name, lastname || profile?.lastname]
       .map((value) => value?.trim())
@@ -108,6 +137,38 @@ function MiPerfilForm() {
   }, [lastname, name, profile?.lastname, profile?.name]);
   const username = profile?.username?.trim() || getUsernameFromToken();
 
+  const toggleCompetition = (competitionId: number) => {
+    setSelectedCompetitionIds((current) => {
+      const exists = current.includes(competitionId);
+      const nextCompetitionIds = exists
+        ? current.filter((id) => id !== competitionId)
+        : [...current, competitionId];
+
+      if (exists) {
+        setSelectedTeamIds((teamIds) =>
+          teamIds.filter((teamId) => {
+            const team = teams.find((entry) => entry.id === teamId);
+            return team ? team.competitionId !== competitionId : true;
+          })
+        );
+      }
+
+      return nextCompetitionIds;
+    });
+  };
+
+  const toggleTeam = (team: TeamItem) => {
+    setSelectedTeamIds((current) =>
+      current.includes(team.id)
+        ? current.filter((id) => id !== team.id)
+        : [...current, team.id]
+    );
+
+    setSelectedCompetitionIds((current) =>
+      current.includes(team.competitionId) ? current : [...current, team.competitionId]
+    );
+  };
+
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveError(null);
@@ -117,6 +178,8 @@ function MiPerfilForm() {
         name: name.trim(),
         lastname: lastname.trim(),
         bio: bio.trim(),
+        preferredCompetitionIds: selectedCompetitionIds,
+        preferredTeamIds: selectedTeamIds,
       });
       applyProfile(data);
     } catch {
@@ -302,10 +365,8 @@ function MiPerfilForm() {
               )}
             </section>
 
-            <form
-              onSubmit={saveProfile}
-              className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.35)] backdrop-blur sm:p-8"
-            >
+            <form onSubmit={saveProfile} className="space-y-6">
+              <section className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.35)] backdrop-blur sm:p-8">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="dm-sans text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
@@ -377,6 +438,120 @@ function MiPerfilForm() {
                   />
                 </div>
               </div>
+              </section>
+
+              <section className="rounded-[28px] border border-slate-200 bg-white/90 p-6 shadow-[0_20px_60px_-45px_rgba(15,23,42,0.35)] backdrop-blur sm:p-8">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                  <div>
+                    <p className="dm-sans text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
+                      Preferencias deportivas
+                    </p>
+                    <h2 className="dm-sans mt-1 text-2xl font-bold tracking-tight text-slate-900">
+                      Ligas y equipos que quieres seguir
+                    </h2>
+                  </div>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1.5 text-sm text-amber-700">
+                    <ShieldCheck className="size-4" />
+                    {selectedCompetitionIds.length} ligas y {selectedTeamIds.length} equipos
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-6 xl:grid-cols-2">
+                  <div>
+                    <div className="mb-3 flex items-center gap-2">
+                      <Trophy className="size-4 text-primaryBlue" />
+                      <h3 className="dm-sans text-lg font-semibold text-slate-900">Ligas favoritas</h3>
+                    </div>
+                    <p className="mb-4 text-sm leading-6 text-slate-500">
+                      Elige las competiciones que más te interesan. Si marcas un equipo, su liga se agrega automáticamente.
+                    </p>
+
+                    <div className="grid gap-3 max-h-[320px] overflow-y-auto pr-1">
+                      {competitions.map((competition) => {
+                        const selected = selectedCompetitionIdsSet.has(competition.id);
+                        return (
+                          <button
+                            key={competition.id}
+                            type="button"
+                            onClick={() => toggleCompetition(competition.id)}
+                            className={`flex w-full items-start justify-between rounded-2xl border px-4 py-3 text-left transition ${
+                              selected
+                                ? "border-primaryBlue bg-primaryBlue/5 shadow-[0_14px_30px_-24px_rgba(19,70,134,0.7)]"
+                                : "border-slate-200 bg-white hover:border-primaryBlue/40 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div>
+                              <p className="dm-sans font-semibold text-slate-900">{competition.name}</p>
+                              <p className="text-sm text-slate-500">
+                                {competition.sportName} · {competition.countryName}
+                              </p>
+                            </div>
+                            <span
+                              className={`mt-0.5 flex size-6 items-center justify-center rounded-full border ${
+                                selected
+                                  ? "border-primaryBlue bg-primaryBlue text-white"
+                                  : "border-slate-300 text-transparent"
+                              }`}
+                            >
+                              <Check className="size-3.5" />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="mb-3 flex items-center gap-2">
+                      <UserRound className="size-4 text-orange-500" />
+                      <h3 className="dm-sans text-lg font-semibold text-slate-900">Equipos favoritos</h3>
+                    </div>
+                    <p className="mb-4 text-sm leading-6 text-slate-500">
+                      Te mostramos todos los equipos o solo los de las ligas elegidas para ayudarte a elegir más rápido.
+                    </p>
+
+                    <div className="grid gap-3 max-h-[320px] overflow-y-auto pr-1">
+                      {visibleTeams.map((team) => {
+                        const selected = selectedTeamIdsSet.has(team.id);
+                        return (
+                          <button
+                            key={team.id}
+                            type="button"
+                            onClick={() => toggleTeam(team)}
+                            className={`flex w-full items-start justify-between rounded-2xl border px-4 py-3 text-left transition ${
+                              selected
+                                ? "border-orange-400 bg-orange-50 shadow-[0_14px_30px_-24px_rgba(249,115,22,0.55)]"
+                                : "border-slate-200 bg-white hover:border-orange-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <div>
+                              <p className="dm-sans font-semibold text-slate-900">{team.name}</p>
+                              <p className="text-sm text-slate-500">
+                                {team.competitionName} · {team.countryName}
+                              </p>
+                            </div>
+                            <span
+                              className={`mt-0.5 flex size-6 items-center justify-center rounded-full border ${
+                                selected
+                                  ? "border-orange-500 bg-orange-500 text-white"
+                                  : "border-slate-300 text-transparent"
+                              }`}
+                            >
+                              <Check className="size-3.5" />
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {visibleTeams.length === 0 && (
+                      <p className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
+                        Selecciona una liga para ver sus equipos disponibles.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </section>
 
               {saveError && (
                 <p className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">

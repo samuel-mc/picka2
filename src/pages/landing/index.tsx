@@ -1,8 +1,21 @@
 import { Link } from 'react-router-dom';
 import { TrendingUp, ShieldCheck, Trophy, ArrowRight, Star } from 'lucide-react';
 import { TipsterLayout } from '@/layouts/TipsterLayout';
+import { useAuthStore } from '@/stores/authStore';
+import { PostsFeedScreen } from '@/components/posts/PostsFeedScreen';
 
 export default function Landing() {
+  const token = useAuthStore((state) => state.token);
+  const role = useAuthStore((state) => state.role);
+
+  if (token && role === "ROLE_TIPSTER") {
+    return (
+      <TipsterLayout isFixed={false}>
+        <PostsFeedScreen />
+      </TipsterLayout>
+    );
+  }
+
   const dummyTipsters = [
     { name: 'Alex Pronósticos', sport: 'Fútbol', winRate: '75%', roi: '+12.5%', avatar: 'https://i.pravatar.cc/150?u=1' },
     { name: 'BetMaster V', sport: 'Tenis', winRate: '68%', roi: '+8.2%', avatar: 'https://i.pravatar.cc/150?u=2' },

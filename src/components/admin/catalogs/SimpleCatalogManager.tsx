@@ -11,6 +11,7 @@ interface SimpleCatalogManagerProps {
   description: string;
   endpoint: string;
   entityLabel: string;
+  supportsLogo?: boolean;
 }
 
 interface FormState {
@@ -45,6 +46,7 @@ export const SimpleCatalogManager = ({
   description,
   endpoint,
   entityLabel,
+  supportsLogo = true,
 }: SimpleCatalogManagerProps) => {
   const api = useApi();
   const [items, setItems] = useState<CatalogItem[]>([]);
@@ -188,7 +190,7 @@ export const SimpleCatalogManager = ({
           </div>
         </form>
 
-        {editingItem ? (
+        {editingItem && supportsLogo ? (
           <div className="mt-4">
             <CatalogLogoUploader
               entityId={editingItem.id}
@@ -238,7 +240,7 @@ export const SimpleCatalogManager = ({
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                          {item.logoUrl ? (
+                          {supportsLogo && item.logoUrl ? (
                             <img
                               src={item.logoUrl}
                               alt={item.name}
@@ -246,7 +248,7 @@ export const SimpleCatalogManager = ({
                             />
                           ) : (
                             <span className="text-[10px] font-semibold uppercase text-slate-400">
-                              Sin
+                              {supportsLogo ? "Sin" : "Txt"}
                             </span>
                           )}
                         </div>
