@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { RegisterInput } from "../../../components/common/RegisterInput";
 import { Loading } from "../../../components/common/Loading";
+import { getErrorMessage } from "../../../lib/errorMessage";
 import { TipsterLayout } from "../../../layouts/TipsterLayout";
 import sideImg from "../../../assets/side_login.png";
 
@@ -35,11 +36,8 @@ export const RequestPasswordReset = () => {
       });
       toast.success("Te enviamos un enlace para actualizar tu contraseña");
       reset();
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-          "No fue posible procesar la solicitud"
-      );
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "No fue posible procesar la solicitud"));
     } finally {
       setIsLoading(false);
     }

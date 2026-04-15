@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { UserLayout } from "@/layouts/UsersLayout";
@@ -52,7 +52,7 @@ export const CompetitionsCatalogPage = () => {
   const [editingItem, setEditingItem] = useState<CompetitionItem | null>(null);
   const [form, setForm] = useState<CompetitionForm>(initialForm);
 
-  const loadCatalogs = async () => {
+  const loadCatalogs = useCallback(async () => {
     try {
       setLoading(true);
       const [competitionsResponse, sportsResponse, countriesResponse] = await Promise.all([
@@ -69,11 +69,11 @@ export const CompetitionsCatalogPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [api]);
 
   useEffect(() => {
-    loadCatalogs();
-  }, []);
+    void loadCatalogs();
+  }, [loadCatalogs]);
 
   const resetForm = () => {
     setEditingItem(null);

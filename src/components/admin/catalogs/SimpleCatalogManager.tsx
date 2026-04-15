@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/common/ui/button";
@@ -55,7 +55,7 @@ export const SimpleCatalogManager = ({
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
   const [form, setForm] = useState<FormState>(initialForm);
 
-  const loadItems = async () => {
+  const loadItems = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.get<ApiResponse<CatalogItem[]>>(endpoint);
@@ -65,11 +65,11 @@ export const SimpleCatalogManager = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, endpoint, entityLabel]);
 
   useEffect(() => {
-    loadItems();
-  }, []);
+    void loadItems();
+  }, [loadItems]);
 
   const resetForm = () => {
     setForm(initialForm);

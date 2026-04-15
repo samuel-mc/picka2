@@ -3,6 +3,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { clearAuthSession } from "@/lib/auth";
 
+const getUnauthorizedRedirectPath = () => {
+  if (typeof window === "undefined") {
+    return "/login";
+  }
+
+  return window.location.pathname.startsWith("/admin") ? "/admin/login" : "/login";
+};
+
 export const useApi = () => {
   const navigate = useNavigate();
 
@@ -29,7 +37,7 @@ export const useApi = () => {
       (error) => {
         if (error.response && error.response.status === 401) {
           clearAuthSession();
-          navigate("/login");
+          navigate(getUnauthorizedRedirectPath());
         }
         return Promise.reject(error);
       }

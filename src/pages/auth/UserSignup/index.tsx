@@ -8,6 +8,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useApi } from "../../../hooks/useApi";
+import { getErrorMessage } from "../../../lib/errorMessage";
 import { buildPasswordValidation } from "../../../lib/passwordValidation";
 
 type Inputs = {
@@ -49,11 +50,9 @@ export const UserSignup = () => {
       await api.post("/auth/register-admin", payload);
       toast.success("Administrador creado correctamente");
       navigate("/admin/usuarios", { replace: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error en registro:", error);
-      toast.error(
-        error?.response?.data?.message || "Error al generar el administrador"
-      );
+      toast.error(getErrorMessage(error, "Error al generar el administrador"));
     } finally {
       setIsLoading(false);
     }

@@ -4,6 +4,7 @@ import { ArrowRight, ShieldCheck, Sparkles, TrendingUp } from "lucide-react";
 import { RegisterInput } from "../../../components/common/RegisterInput";
 import { Loading } from "../../../components/common/Loading";
 import { useLogin } from "../../../hooks/useLogin";
+import { getErrorMessage } from "../../../lib/errorMessage";
 import toast from "react-hot-toast";
 import { TipsterLayout } from "../../../layouts/TipsterLayout";
 import sideImg from "../../../assets/side_login.png";
@@ -26,8 +27,8 @@ export const TipsterLogin = () => {
     // Redirect tipsters to user dashboard for now (can be changed to /tipster/dashboard if it exists later)
     try {
       await login(username, data.password);
-    } catch (err: any) {
-      toast.error(err.message ?? error);
+    } catch (errorResponse: unknown) {
+      toast.error(getErrorMessage(errorResponse, error || "No fue posible iniciar sesión"));
     }
   };
   

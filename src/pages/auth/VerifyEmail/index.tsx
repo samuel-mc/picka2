@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { useApi } from "../../../hooks/useApi";
 import { Loading } from "../../../components/common/Loading";
+import { getErrorMessage } from "../../../lib/errorMessage";
 import { TipsterLayout } from "../../../layouts/TipsterLayout";
 import { CheckCircle, XCircle } from "lucide-react";
 
@@ -27,12 +28,12 @@ export const VerifyEmail = () => {
         await api.get(`/auth/verify-email?token=${token}`);
         setStatus("success");
         setMessage("Tu correo electrónico ha sido verificado con éxito.");
-      } catch (error: any) {
+      } catch (error: unknown) {
         setStatus("error");
-        setMessage(
-          error.response?.data?.message ||
-            "Hubo un error al verificar tu correo. El enlace puede haber expirado o ser inválido."
-        );
+        setMessage(getErrorMessage(
+          error,
+          "Hubo un error al verificar tu correo. El enlace puede haber expirado o ser inválido."
+        ));
       } finally {
         setIsLoading(false);
       }

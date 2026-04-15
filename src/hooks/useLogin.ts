@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getDefaultAppPath } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/errorMessage";
 import { useAuthStore } from "@/stores/authStore";
 
 type PasswordCredentialConstructor = new (data: {
@@ -77,9 +78,9 @@ export function useLogin() {
       setIsLoading(false);
       navigate(redirectPath ?? getDefaultAppPath(typeof data?.role === "string" ? data.role : null));
       return data;
-    } catch (err: any) {
+    } catch (error: unknown) {
       setIsLoading(false);
-      const message = err.message ?? "No fue posible iniciar sesión";
+      const message = getErrorMessage(error, "No fue posible iniciar sesión");
       setError(message);
       throw new Error(message);
     }

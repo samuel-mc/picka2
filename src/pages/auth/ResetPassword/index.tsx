@@ -5,6 +5,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { RegisterInput } from "../../../components/common/RegisterInput";
 import { Loading } from "../../../components/common/Loading";
+import { getErrorMessage } from "../../../lib/errorMessage";
 import { TipsterLayout } from "../../../layouts/TipsterLayout";
 import sideImg from "../../../assets/side_login.png";
 import { buildPasswordValidation } from "../../../lib/passwordValidation";
@@ -47,10 +48,8 @@ export const ResetPassword = () => {
       });
       toast.success("Contraseña actualizada correctamente");
       navigate("/login", { replace: true });
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message || "No fue posible actualizar la contraseña"
-      );
+    } catch (error: unknown) {
+      toast.error(getErrorMessage(error, "No fue posible actualizar la contraseña"));
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@ import { useForm, type SubmitHandler } from "react-hook-form";
 import { RegisterInput } from "../../../components/common/RegisterInput";
 import { Loading } from "../../../components/common/Loading";
 import { useLogin } from "../../../hooks/useLogin";
+import { getErrorMessage } from "../../../lib/errorMessage";
 import toast from "react-hot-toast";
 import { TipsterLayout } from "../../../layouts/TipsterLayout";
 
@@ -27,8 +28,8 @@ export const UserLogin = () => {
     const username = data.username?.trim()?.toLowerCase();
     try {
       await login(username, data.password, "/admin/panel");
-    } catch (err: any) {
-      toast.error(err.message ?? error);
+    } catch (errorResponse: unknown) {
+      toast.error(getErrorMessage(errorResponse, error || "No fue posible iniciar sesión"));
     }
   };
   
