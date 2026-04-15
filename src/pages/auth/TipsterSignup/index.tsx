@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import type { SubmitHandler } from "react-hook-form";
 import "../UserSignup/styles.css";
@@ -25,6 +25,15 @@ type Inputs = {
   // avatarUrl is handled internally for now, but we can add it here if needed
 };
 
+type AvailabilityResponse = {
+  success?: boolean;
+  data?: {
+    usernameAvailable?: boolean | null;
+    emailAvailable?: boolean | null;
+  };
+  message?: string;
+};
+
 const getAdultBirthDateLimit = () => {
   const today = new Date();
   today.setFullYear(today.getFullYear() - 18);
@@ -40,9 +49,10 @@ export const TipsterSignup = () => {
     register,
     handleSubmit,
     getValues,
+    setError,
     trigger,
     watch,
-    formState: { errors },
+    formState: { errors, isValid },
   } = useForm<Inputs>({
     mode: "onChange",
     reValidateMode: "onChange",
@@ -66,15 +76,53 @@ export const TipsterSignup = () => {
     avatarUrl: "/register-tipster", // dummy value as requested
   });
 
-  const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
-    headers: { "Content-Type": "application/json" },
-  });
+  const api = useMemo(
+    () =>
+      axios.create({
+        baseURL: import.meta.env.VITE_API_URL,
+        headers: { "Content-Type": "application/json" },
+      }),
+    []
+  );
+
+  const isSubmitDisabled = isLoading || !isValid;
 
   const onSubmit: SubmitHandler<Inputs> = async (data) => {
     setIsLoading(true);
 
     try {
+      const normalizedUsername = data.username?.trim().toLowerCase();
+      const normalizedEmail = data.email?.trim().toLowerCase();
+
+      const { data: availabilityResponse } = await api.get<AvailabilityResponse>("/auth/availability", {
+        params: {
+          username: normalizedUsername,
+          email: normalizedEmail,
+        },
+      });
+
+      let hasAvailabilityError = false;
+
+      if (availabilityResponse.data?.usernameAvailable === false) {
+        setError("username", {
+          type: "manual",
+          message: "Este username ya está registrado",
+        });
+        hasAvailabilityError = true;
+      }
+
+      if (availabilityResponse.data?.emailAvailable === false) {
+        setError("email", {
+          type: "manual",
+          message: "Este correo ya está registrado",
+        });
+        hasAvailabilityError = true;
+      }
+
+      if (hasAvailabilityError) {
+        return;
+      }
+
       const payload = formatFormData(data);
       await api.post("/auth/register-tipster", payload);
       toast.success("Tipster creado correctamente", { duration: 5000 });
@@ -297,7 +345,8 @@ export const TipsterSignup = () => {
                 </p>
                 <button
                   type="submit"
-                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-primaryBlue hover:shadow-lg hover:shadow-primaryBlue/20"
+                  disabled={isSubmitDisabled}
+                  className="inline-flex items-center justify-center rounded-2xl bg-slate-950 px-6 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-primaryBlue hover:shadow-lg hover:shadow-primaryBlue/20 disabled:cursor-not-allowed disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none disabled:hover:translate-y-0"
                 >
                   Crear mi cuenta
                 </button>

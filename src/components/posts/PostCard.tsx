@@ -10,6 +10,8 @@ import {
   ThumbsDown,
   ThumbsUp,
   Trophy,
+  UserMinus,
+  UserPlus,
   X,
 } from "lucide-react";
 import type {
@@ -56,6 +58,8 @@ interface Props {
   onComment: (postId: number, content: string, parentCommentId?: number | null) => Promise<CommentItem | null>;
   onUpdatePickStatus: (postId: number, status: ResultStatus) => Promise<void>;
   onRegisterView: (postId: number) => Promise<void>;
+  onToggleFollow?: (authorId: number, currentlyFollowing: boolean) => Promise<boolean | null>;
+  followLoadingForAuthorId?: number | null;
   onOpenDetail?: (postId: number) => void;
   registerViewOnMount?: boolean;
   readOnly?: boolean;
@@ -76,6 +80,8 @@ export function PostCard({
   onComment,
   onUpdatePickStatus,
   onRegisterView,
+  onToggleFollow,
+  followLoadingForAuthorId = null,
   onOpenDetail,
   registerViewOnMount = true,
   readOnly = false,
@@ -142,6 +148,9 @@ export function PostCard({
 
   const isOwner = currentUserId === post.author.id;
   const canOpenDetail = Boolean(onOpenDetail);
+  const canFollowAuthor = Boolean(onToggleFollow) && !readOnly && !isOwner;
+  const isFollowingAuthor = Boolean(post.author.followedByCurrentUser);
+  const isFollowLoading = followLoadingForAuthorId === post.author.id;
 
   const handleOpenDetail = () => {
     if (!onOpenDetail) return;
@@ -256,6 +265,25 @@ export function PostCard({
               </p>
             </div>
           </button>
+
+          {canFollowAuthor && (
+            <button
+              type="button"
+              disabled={isFollowLoading}
+              onClick={(event) => {
+                event.stopPropagation();
+                void onToggleFollow?.(post.author.id, isFollowingAuthor);
+              }}
+              className={`inline-flex min-h-11 items-center justify-center gap-2 self-start rounded-full px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+                isFollowingAuthor
+                  ? "border border-slate-200 bg-white text-slate-700"
+                  : "bg-[#ed5f2f] text-white shadow-[0_16px_30px_rgba(237,95,47,0.22)]"
+              }`}
+            >
+              {isFollowingAuthor ? <UserMinus className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+              {isFollowLoading ? "Actualizando..." : isFollowingAuthor ? "Siguiendo" : "Seguir"}
+            </button>
+          )}
         </header>
 
         <div

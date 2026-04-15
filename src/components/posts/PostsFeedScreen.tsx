@@ -47,6 +47,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [showFloatingComposerButton, setShowFloatingComposerButton] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [followLoadingAuthorId, setFollowLoadingAuthorId] = useState<number | null>(null);
 
   const applyFeedResponse = useCallback(
     (response: PagedResponse<PostItem>, append = false) => {
@@ -154,6 +155,18 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
 
   const updatePost = useCallback((postId: number, updater: (current: PostItem) => PostItem) => {
     setPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
+  }, []);
+
+  const updateAuthorFollowState = useCallback((authorId: number, followedByCurrentUser: boolean) => {
+    setPosts((current) =>
+      current.map((post) => ({
+        ...post,
+        author:
+          post.author.id === authorId
+            ? { ...post.author, followedByCurrentUser }
+            : post.author,
+      }))
+    );
   }, []);
 
   const handleCreatePost = useCallback(
@@ -377,6 +390,29 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
     navigate(`/posts/${postId}`);
   }, [navigate]);
 
+  const handleToggleFollow = useCallback(
+    async (authorId: number, currentlyFollowing: boolean) => {
+      setFollowLoadingAuthorId(authorId);
+      try {
+        if (currentlyFollowing) {
+          await api.delete(`/posts/users/${authorId}/follow`);
+        } else {
+          await api.post(`/posts/users/${authorId}/follow`);
+        }
+
+        updateAuthorFollowState(authorId, !currentlyFollowing);
+        toast.success(currentlyFollowing ? "Dejaste de seguir al usuario." : "Ahora sigues al usuario.");
+        return !currentlyFollowing;
+      } catch {
+        toast.error("No se pudo actualizar el seguimiento.");
+        return null;
+      } finally {
+        setFollowLoadingAuthorId(null);
+      }
+    },
+    [api, updateAuthorFollowState]
+  );
+
   const clearAuthorFilter = useCallback(() => {
     setAuthorFilter(null);
   }, []);
@@ -479,6 +515,8 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
                   onComment={handleComment}
                   onUpdatePickStatus={handleUpdatePickStatus}
                   onRegisterView={handleRegisterView}
+                  onToggleFollow={handleToggleFollow}
+                  followLoadingForAuthorId={followLoadingAuthorId}
                   onOpenDetail={handleOpenDetail}
                 />
               ))}

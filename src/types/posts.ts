@@ -20,6 +20,7 @@ export interface PostAuthor {
   avatarUrl: string | null;
   validatedTipster: boolean;
   badge: string | null;
+  followedByCurrentUser?: boolean | null;
 }
 
 export interface PostPick {

@@ -12,6 +12,8 @@ interface RegisterInputProps<T extends Record<string, unknown>> {
   autoComplete?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   validation?: RegisterOptions<T, Path<T>>;
+  helperText?: string;
+  helperTone?: "default" | "success";
 }
 
 export const RegisterInput = <T extends Record<string, unknown>>({
@@ -24,6 +26,8 @@ export const RegisterInput = <T extends Record<string, unknown>>({
   autoComplete,
   inputMode,
   validation,
+  helperText,
+  helperTone = "default",
 }: RegisterInputProps<T>) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordType = type === "password";
@@ -84,11 +88,19 @@ export const RegisterInput = <T extends Record<string, unknown>>({
           </button>
         )}
       </div>
-      {fieldError && (
+      {fieldError ? (
         <span className="text-red-500 text-sm mt-1 block">
           {fieldError.message || "Este campo es requerido"}
         </span>
-      )}
+      ) : helperText ? (
+        <span
+          className={`text-sm mt-1 block ${
+            helperTone === "success" ? "text-emerald-600" : "text-slate-500"
+          }`}
+        >
+          {helperText}
+        </span>
+      ) : null}
     </div>
   );
 };
