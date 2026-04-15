@@ -321,10 +321,11 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   );
 
   const handleComment = useCallback(
-    async (postId: number, content: string) => {
+    async (postId: number, content: string, parentCommentId?: number | null) => {
       try {
         const { data } = await api.post<ApiResponse<CommentItem>>(`/posts/${postId}/comments`, {
           content,
+          parentCommentId: parentCommentId ?? null,
         });
         updatePost(postId, (current) => ({
           ...current,

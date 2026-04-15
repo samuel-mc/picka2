@@ -89,8 +89,11 @@ export interface CommentItem {
   createdAt: string;
   updatedAt: string;
   author: PostAuthor;
+  parentCommentId: number | null;
+  replyingToUsername: string | null;
   likesCount: number;
   likedByCurrentUser: boolean;
+  replies: CommentItem[];
 }
 
 export interface PagedResponse<T> {

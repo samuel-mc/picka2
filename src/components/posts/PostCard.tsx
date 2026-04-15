@@ -40,6 +40,8 @@ const GENERIC_AVATAR =
     </svg>
   `);
 
+const MAX_REPLY_DEPTH = 2;
+
 interface Props {
   post: PostItem;
   currentUserId: number | null;
@@ -50,7 +52,7 @@ interface Props {
   onToggleRepost: (post: PostItem) => Promise<boolean | null>;
   onShare: (post: PostItem) => Promise<PostMetrics | null>;
   onLoadComments: (postId: number) => Promise<CommentItem[]>;
-  onComment: (postId: number, content: string) => Promise<CommentItem | null>;
+  onComment: (postId: number, content: string, parentCommentId?: number | null) => Promise<CommentItem | null>;
   onUpdatePickStatus: (postId: number, status: ResultStatus) => Promise<void>;
   onRegisterView: (postId: number) => Promise<void>;
   onOpenDetail?: (postId: number) => void;
@@ -80,6 +82,9 @@ export function PostCard({
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentValue, setCommentValue] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
+  const [activeReplyFor, setActiveReplyFor] = useState<number | null>(null);
+  const [sendingReplyFor, setSendingReplyFor] = useState<number | null>(null);
   const [loadingComments, setLoadingComments] = useState(false);
   const [sendingComment, setSendingComment] = useState(false);
 
@@ -158,8 +163,28 @@ export function PostCard({
     const updated = await onToggleCommentLike(post.id, commentId);
     if (!updated) return;
     setComments((current) =>
-      current.map((comment) => (comment.id === commentId ? updated : comment))
+      updateCommentTree(current, commentId, (comment) => ({
+        ...updated,
+        replies: comment.replies,
+      }))
     );
+  };
+
+  const submitReply = async (parentCommentId: number) => {
+    const replyValue = replyDrafts[parentCommentId]?.trim();
+    if (readOnly || !replyValue) return;
+
+    setSendingReplyFor(parentCommentId);
+    try {
+      const created = await onComment(post.id, replyValue, parentCommentId);
+      if (!created) return;
+
+      setComments((current) => insertReplyIntoTree(current, parentCommentId, created));
+      setReplyDrafts((current) => ({ ...current, [parentCommentId]: "" }));
+      setActiveReplyFor(null);
+    } finally {
+      setSendingReplyFor(null);
+    }
   };
 
   return (
@@ -414,34 +439,22 @@ export function PostCard({
             ) : (
               <div className="space-y-3">
                 {comments.map((comment) => (
-                  <div key={comment.id} className="rounded-2xl bg-slate-50 px-4 py-3">
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                          <p className="text-sm font-semibold text-slate-800">
-                            {comment.author.name}
-                          </p>
-                          <span className="text-xs text-slate-400">
-                            {formatDate(comment.createdAt)}
-                          </span>
-                        </div>
-                        <p className="mt-2 text-sm text-slate-600">{comment.content}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => void toggleCommentLike(comment.id)}
-                        className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
-                          comment.likedByCurrentUser
-                            ? "bg-[#0f4c81] text-white shadow-sm"
-                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-[#0f4c81]/35"
-                        }`}
-                        aria-label={comment.likedByCurrentUser ? "Quitar like del comentario" : "Dar like al comentario"}
-                      >
-                        <ThumbsUp className="h-3.5 w-3.5" />
-                        <span>{comment.likesCount}</span>
-                      </button>
-                    </div>
-                  </div>
+                  <CommentThread
+                    key={comment.id}
+                    comment={comment}
+                    depth={0}
+                    activeReplyFor={activeReplyFor}
+                    replyDrafts={replyDrafts}
+                    sendingReplyFor={sendingReplyFor}
+                    onToggleLike={toggleCommentLike}
+                    onToggleReply={(commentId) =>
+                      setActiveReplyFor((current) => (current === commentId ? null : commentId))
+                    }
+                    onChangeReplyDraft={(commentId, value) =>
+                      setReplyDrafts((current) => ({ ...current, [commentId]: value }))
+                    }
+                    onSubmitReply={submitReply}
+                  />
                 ))}
               </div>
             )}
@@ -449,6 +462,180 @@ export function PostCard({
         )}
       </footer>
     </article>
+  );
+}
+
+function updateCommentTree(
+  comments: CommentItem[],
+  commentId: number,
+  updater: (comment: CommentItem) => CommentItem
+): CommentItem[] {
+  return comments.map((comment) => {
+    if (comment.id === commentId) {
+      return updater(comment);
+    }
+
+    if (comment.replies.length === 0) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      replies: updateCommentTree(comment.replies, commentId, updater),
+    };
+  });
+}
+
+function insertReplyIntoTree(
+  comments: CommentItem[],
+  parentCommentId: number,
+  reply: CommentItem
+): CommentItem[] {
+  return comments.map((comment) => {
+    if (comment.id === parentCommentId) {
+      return {
+        ...comment,
+        replies: [...comment.replies, reply],
+      };
+    }
+
+    if (comment.replies.length === 0) {
+      return comment;
+    }
+
+    return {
+      ...comment,
+      replies: insertReplyIntoTree(comment.replies, parentCommentId, reply),
+    };
+  });
+}
+
+function CommentThread({
+  comment,
+  depth,
+  activeReplyFor,
+  replyDrafts,
+  sendingReplyFor,
+  onToggleLike,
+  onToggleReply,
+  onChangeReplyDraft,
+  onSubmitReply,
+}: {
+  comment: CommentItem;
+  depth: number;
+  activeReplyFor: number | null;
+  replyDrafts: Record<number, string>;
+  sendingReplyFor: number | null;
+  onToggleLike: (commentId: number) => Promise<void>;
+  onToggleReply: (commentId: number) => void;
+  onChangeReplyDraft: (commentId: number, value: string) => void;
+  onSubmitReply: (parentCommentId: number) => Promise<void>;
+}) {
+  const isReplyBoxOpen = activeReplyFor === comment.id;
+  const replyValue = replyDrafts[comment.id] ?? "";
+  const canReply = depth < MAX_REPLY_DEPTH;
+  const showReplyingTo = depth >= 2 && comment.replyingToUsername;
+
+  return (
+    <div className="space-y-3">
+      <div
+        className={`rounded-2xl px-4 py-3 ${
+          depth === 0 ? "bg-slate-50" : "border border-slate-200/80 bg-white"
+        }`}
+      >
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+              <p className="text-sm font-semibold text-slate-800">{comment.author.name}</p>
+              <span className="text-xs text-slate-400">{formatDate(comment.createdAt)}</span>
+            </div>
+            {showReplyingTo && (
+              <p className="mt-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#0f4c81]">
+                Respondiendo a @{comment.replyingToUsername}
+              </p>
+            )}
+            <p className="mt-2 text-sm text-slate-600">{comment.content}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void onToggleLike(comment.id)}
+            className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
+              comment.likedByCurrentUser
+                ? "bg-[#0f4c81] text-white shadow-sm"
+                : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-[#0f4c81]/35"
+            }`}
+            aria-label={comment.likedByCurrentUser ? "Quitar like del comentario" : "Dar like al comentario"}
+          >
+            <ThumbsUp className="h-3.5 w-3.5" />
+            <span>{comment.likesCount}</span>
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {canReply && (
+            <button
+              type="button"
+              onClick={() => onToggleReply(comment.id)}
+              className="inline-flex min-h-9 items-center rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 transition hover:ring-[#0f4c81]/35"
+            >
+              {isReplyBoxOpen ? "Cancelar" : "Responder"}
+            </button>
+          )}
+          {comment.replies.length > 0 && (
+            <span className="text-xs font-medium text-slate-400">
+              {comment.replies.length} {comment.replies.length === 1 ? "respuesta" : "respuestas"}
+            </span>
+          )}
+        </div>
+
+        {canReply && isReplyBoxOpen && (
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+            <textarea
+              value={replyValue}
+              onChange={(event) => onChangeReplyDraft(comment.id, event.target.value)}
+              rows={2}
+              placeholder="Escribe una respuesta"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-[#0f4c81]"
+            />
+            <button
+              type="button"
+              disabled={sendingReplyFor === comment.id}
+              onClick={() => void onSubmitReply(comment.id)}
+              className="min-h-11 rounded-2xl bg-[#0f4c81] px-4 py-3 text-sm font-semibold text-white disabled:opacity-60 sm:self-start"
+            >
+              Responder
+            </button>
+          </div>
+        )}
+      </div>
+
+      {comment.replies.length > 0 && (
+        <div
+          className={
+            depth === 0
+              ? "ml-3 space-y-3 border-l border-slate-200 pl-3 sm:ml-4 sm:pl-4"
+              : depth >= 1
+                ? "ml-2 space-y-3 sm:ml-3"
+                : "space-y-3"
+          }
+        >
+          {comment.replies.map((reply) => (
+            <CommentThread
+              key={reply.id}
+              comment={reply}
+              depth={depth + 1}
+              activeReplyFor={activeReplyFor}
+              replyDrafts={replyDrafts}
+              sendingReplyFor={sendingReplyFor}
+              onToggleLike={onToggleLike}
+              onToggleReply={onToggleReply}
+              onChangeReplyDraft={onChangeReplyDraft}
+              onSubmitReply={onSubmitReply}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

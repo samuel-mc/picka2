@@ -216,10 +216,11 @@ export default function PostDetailPage() {
   );
 
   const handleComment = useCallback(
-    async (targetPostId: number, content: string) => {
+    async (targetPostId: number, content: string, parentCommentId?: number | null) => {
       try {
         const { data } = await api.post<ApiResponse<CommentItem>>(`/posts/${targetPostId}/comments`, {
           content,
+          parentCommentId: parentCommentId ?? null,
         });
         updatePost((current) => ({
           ...current,
