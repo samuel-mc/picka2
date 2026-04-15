@@ -5,7 +5,6 @@ import { useAuthStore } from "@/stores/authStore";
 import { useApi } from "@/hooks/useApi";
 import { Button } from "@/components/common/ui/button";
 import { Loading } from "@/components/common/Loading";
-import { getAuthToken } from "@/lib/auth";
 import type { ApiResponse, CompetitionItem, TeamItem } from "@/types/catalog";
 import {
   Check,
@@ -33,24 +32,6 @@ interface MeProfile {
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
-
-function getUsernameFromToken() {
-  const token = getAuthToken();
-  if (!token) return null;
-
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-    const json = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const possibleUsername = json.username ?? json.userName ?? json.preferred_username ?? json.sub;
-
-    return typeof possibleUsername === "string" && possibleUsername.trim()
-      ? possibleUsername.trim()
-      : null;
-  } catch {
-    return null;
-  }
-}
 
 function MiPerfilForm() {
   const api = useApi();
@@ -135,7 +116,7 @@ function MiPerfilForm() {
       .map((part) => part.charAt(0).toUpperCase())
       .join("");
   }, [lastname, name, profile?.lastname, profile?.name]);
-  const username = profile?.username?.trim() || getUsernameFromToken();
+  const username = profile?.username?.trim() || null;
 
   const toggleCompetition = (competitionId: number) => {
     setSelectedCompetitionIds((current) => {

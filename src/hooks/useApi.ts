@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { clearAuthSession, getAuthToken } from "@/lib/auth";
+import { clearAuthSession } from "@/lib/auth";
 
 export const useApi = () => {
   const navigate = useNavigate();
@@ -9,15 +9,12 @@ export const useApi = () => {
   const api = useMemo(() => {
     const instance = axios.create({
       baseURL: import.meta.env.VITE_API_URL,
+      withCredentials: true,
       headers: { "Content-Type": "application/json" },
     });
 
     instance.interceptors.request.use(
       (config) => {
-        const token = getAuthToken();
-        if (token && config.headers) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
         return config;
       },
       (error) => {
@@ -32,7 +29,7 @@ export const useApi = () => {
       (error) => {
         if (error.response && error.response.status === 401) {
           clearAuthSession();
-          navigate("/");
+          navigate("/login");
         }
         return Promise.reject(error);
       }

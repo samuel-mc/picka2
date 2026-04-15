@@ -159,7 +159,7 @@ export const TipsterSignup = () => {
                 Completa tu perfil
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Cuida estos detalles porque serán la base de cómo te verán dentro de Picka.
+                Cuida estos detalles porque serán la base de cómo te verán dentro de Picka2.
               </p>
             </div>
 

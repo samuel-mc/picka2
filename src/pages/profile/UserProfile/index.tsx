@@ -6,6 +6,7 @@ import { TipsterLayout } from "@/layouts/TipsterLayout";
 import { useApi } from "@/hooks/useApi";
 import { getAuthUserId } from "@/lib/auth";
 import { PostCard } from "@/components/posts/PostCard";
+import { sharePostLink } from "@/components/posts/post-utils";
 import type { ApiResponse, CompetitionItem, TeamItem } from "@/types/catalog";
 import type {
   CommentItem,
@@ -51,7 +52,7 @@ export default function UserProfilePage() {
 
   useEffect(() => {
     if (!Number.isFinite(targetUserId)) {
-      navigate("/tipster/posts");
+      navigate("/feed");
       return;
     }
 
@@ -74,7 +75,7 @@ export default function UserProfilePage() {
       } catch {
         if (!cancelled) {
           toast.error("No se pudo cargar el perfil.");
-          navigate("/tipster/posts");
+          navigate("/feed");
         }
       } finally {
         if (!cancelled) {
@@ -108,6 +109,21 @@ export default function UserProfilePage() {
     [api, updatePost]
   );
 
+  const handleToggleCommentLike = useCallback(
+    async (postId: number, commentId: number) => {
+      try {
+        const { data } = await api.put<ApiResponse<CommentItem>>(
+          `/posts/${postId}/comments/${commentId}/like`
+        );
+        return data.data;
+      } catch {
+        toast.error("No se pudo actualizar el like del comentario.");
+        return null;
+      }
+    },
+    [api]
+  );
+
   const handleSave = useCallback(
     async (postId: number) => {
       try {
@@ -130,36 +146,48 @@ export default function UserProfilePage() {
   );
 
   const handleRepost = useCallback(
-    async (postId: number) => {
+    async (post: PostItem) => {
       try {
-        const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${postId}/repost`);
-        updatePost(postId, (current) => ({
-          ...current,
-          metrics: {
-            ...current.metrics,
-            repostedByCurrentUser: data.data.active,
-            repostsCount: Math.max(0, current.metrics.repostsCount + (data.data.active ? 1 : -1)),
-          },
-        }));
+        const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${post.id}/repost`);
+        if (post.repostEntry && post.repostedBy?.id === currentUserId && !data.data.active) {
+          setPosts((current) => current.filter((item) => item.timelineEntryId !== post.timelineEntryId));
+        } else {
+          updatePost(post.id, (current) => ({
+            ...current,
+            metrics: {
+              ...current.metrics,
+              repostedByCurrentUser: data.data.active,
+              repostsCount: Math.max(0, current.metrics.repostsCount + (data.data.active ? 1 : -1)),
+            },
+          }));
+        }
         return data.data.active;
       } catch {
         toast.error("No se pudo actualizar el repost.");
         return null;
       }
     },
-    [api, updatePost]
+    [api, currentUserId, updatePost]
   );
 
   const handleShare = useCallback(
-    async (postId: number) => {
+    async (post: PostItem) => {
       try {
-        const { data } = await api.post<ApiResponse<PostMetrics>>(`/posts/${postId}/share`, {
+        const shareResult = await sharePostLink(post.id);
+        if (!shareResult.completed) {
+          return null;
+        }
+        toast.success(
+          shareResult.copied ? "Enlace copiado al portapapeles." : "Enlace listo para compartir."
+        );
+
+        const { data } = await api.post<ApiResponse<PostMetrics>>(`/posts/${post.id}/share`, {
           channel: "WEB",
         });
-        updatePost(postId, (current) => ({ ...current, metrics: data.data }));
+        updatePost(post.id, (current) => ({ ...current, metrics: data.data }));
         return data.data;
       } catch {
-        toast.error("No se pudo registrar el share.");
+        toast.error("No se pudo compartir el post.");
         return null;
       }
     },
@@ -266,7 +294,7 @@ export default function UserProfilePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => navigate("/tipster/posts")}
+              onClick={() => navigate("/feed")}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -275,7 +303,7 @@ export default function UserProfilePage() {
 
             {profile.selfProfile ? (
               <Link
-                to="/tipster/perfil/editar"
+                to="/perfil/editar"
                 className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-4 py-2 text-sm font-semibold text-white"
               >
                 Editar perfil
@@ -372,11 +400,12 @@ export default function UserProfilePage() {
               <div className="space-y-6">
                 {posts.map((post) => (
                   <PostCard
-                    key={post.id}
+                    key={post.timelineEntryId}
                     post={post}
                     currentUserId={currentUserId}
-                    onViewProfile={(authorId) => navigate(`/tipster/perfil/${authorId}`)}
+                    onViewProfile={(authorId) => navigate(`/perfil/${authorId}`)}
                     onToggleReaction={handleReaction}
+                    onToggleCommentLike={handleToggleCommentLike}
                     onToggleSave={handleSave}
                     onToggleRepost={handleRepost}
                     onShare={handleShare}
@@ -384,6 +413,7 @@ export default function UserProfilePage() {
                     onComment={handleComment}
                     onUpdatePickStatus={handleUpdatePickStatus}
                     onRegisterView={handleRegisterView}
+                    onOpenDetail={(postId) => navigate(`/posts/${postId}`)}
                   />
                 ))}
               </div>

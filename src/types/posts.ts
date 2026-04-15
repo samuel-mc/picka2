@@ -70,7 +70,11 @@ export interface PostItem {
   visibility: PostVisibility;
   createdAt: string;
   updatedAt: string;
+  timelineEntryId: string;
+  repostEntry: boolean;
+  repostedAt: string | null;
   author: PostAuthor;
+  repostedBy: PostAuthor | null;
   mediaUrls: string[];
   tags: string[];
   simplePick: PostPick | null;
@@ -85,6 +89,8 @@ export interface CommentItem {
   createdAt: string;
   updatedAt: string;
   author: PostAuthor;
+  likesCount: number;
+  likedByCurrentUser: boolean;
 }
 
 export interface PagedResponse<T> {

@@ -69,3 +69,37 @@ export function toDatetimeLocal(value: string) {
   const localDate = new Date(date.getTime() - offset * 60_000);
   return localDate.toISOString().slice(0, 16);
 }
+
+export function getPostShareUrl(postId: number) {
+  if (typeof window === "undefined") {
+    return `/posts/${postId}`;
+  }
+
+  return new URL(`/posts/${postId}`, window.location.origin).toString();
+}
+
+export async function sharePostLink(postId: number) {
+  const url = getPostShareUrl(postId);
+
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      await navigator.share({
+        title: "Picka2",
+        text: "Mira este post en Picka2",
+        url,
+      });
+      return { completed: true, copied: false, url };
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return { completed: false, copied: false, url };
+      }
+    }
+  }
+
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(url);
+    return { completed: true, copied: true, url };
+  }
+
+  return { completed: true, copied: false, url };
+}

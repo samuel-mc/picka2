@@ -2,8 +2,8 @@ import React from "react";
 import { UserSidebar } from "../../components/user/UserSidebar";
 import type { LinkModel } from "../../models/LinkModel";
 import {
+  BarChart3,
   Flag,
-  House,
   MessageSquareQuote,
   MapPinned,
   Shield,
@@ -21,9 +21,9 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
   const links: LinkModel[] = [
     {
       id: 1,
-      name: "Home",
+      name: "Analytics",
       link: "/admin/panel",
-      icon: House,
+      icon: BarChart3,
     },
     {
       id: 2,

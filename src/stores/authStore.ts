@@ -1,36 +1,60 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
 
 interface AuthState {
-  token: string | null;
+  authenticated: boolean;
+  initialized: boolean;
   role: string | null;
   userId: number | null;
-  setAuth: (token: string, role?: string | null, userId?: number | null) => void;
+  username: string | null;
+  setAuth: (payload: {
+    role?: string | null;
+    userId?: number | null;
+    username?: string | null;
+  }) => void;
+  setInitialized: (initialized: boolean) => void;
   clearAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
+      authenticated: false,
+      initialized: false,
       role: null,
       userId: null,
-      setAuth: (token, role, userId) =>
+      username: null,
+      setAuth: ({ role, userId, username }) =>
         set({
-          token,
+          authenticated: true,
+          initialized: true,
           role: role ?? null,
           userId: userId ?? null,
+          username: username ?? null,
         }),
+      setInitialized: (initialized) =>
+        set((state) => ({
+          initialized,
+          authenticated: initialized ? state.authenticated : false,
+        })),
       clearAuth: () =>
         set({
-          token: null,
+          authenticated: false,
+          initialized: true,
           role: null,
           userId: null,
+          username: null,
         }),
     }),
     {
       name: "auth-storage",
-      partialize: ({ token, role, userId }) => ({ token, role, userId }),
+      storage: createJSONStorage(() => sessionStorage),
+      partialize: ({ authenticated, role, userId, username }) => ({
+        authenticated,
+        role,
+        userId,
+        username,
+      }),
     }
   )
 );

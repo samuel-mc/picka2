@@ -38,13 +38,20 @@ export const UserLogin = () => {
       <div className="content-center py-10">
         <div className="bg-white shadow rounded py-10 px-8 max-w-2xl mx-auto">
           <h1 className="text-3xl text-primaryBlue mb-6">Iniciar sesión como usuario interno</h1>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            autoComplete="on"
+            method="post"
+            action="/admin/login"
+            name="admin-login"
+          >
             <div className="flex flex-col">
               <RegisterInput<Inputs>
                 name="username"
                 label="Username o correo electrónico"
                 register={register}
                 fieldError={errors.username}
+                autoComplete="username"
                 required
               />
               <RegisterInput<Inputs>
@@ -53,6 +60,7 @@ export const UserLogin = () => {
                 register={register}
                 fieldError={errors.password}
                 type="password"
+                autoComplete="current-password"
                 required
               />
               <input

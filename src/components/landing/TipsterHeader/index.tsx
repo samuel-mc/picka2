@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Bookmark, Menu, X } from 'lucide-react';
+import { getDefaultAppPath } from '@/lib/auth';
 import logo from "../../../assets/logo.png";
 import './styles.css';
 import { useLogin } from '@/hooks/useLogin';
@@ -11,7 +12,7 @@ interface TipsterHeaderProps {
 }
 
 const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
-  const token = useAuthStore((state) => state.token);
+  const authenticated = useAuthStore((state) => state.authenticated);
   const role = useAuthStore((state) => state.role);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -19,7 +20,7 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
 
   useEffect(() => {
     setIsMenuOpen(false);
-  }, [token, role]);
+  }, [authenticated, role]);
 
   const handleLogout = () => {
     setIsMenuOpen(false);
@@ -30,14 +31,14 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
     setIsMenuOpen(false);
   };
 
-  const homePath = role === 'ROLE_ADMIN' ? "/admin/panel" : "/";
+  const homePath = authenticated ? getDefaultAppPath(role) : "/";
 
   return (
     <header className={`${isFixed ? 'fixed top-0 left-0 right-0 z-50 ' : ''}w-full bg-primaryBlue text-light shadow-md`}>
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
         <div className="shrink-0 flex items-center">
           <Link to={homePath} onClick={closeMenu}>
-            <img src={logo} alt="Picka logo" className="w-full max-width-120 header-logo" />
+            <img src={logo} alt="Picka2 logo" className="w-full max-width-120 header-logo" />
           </Link>
         </div>
 
@@ -52,7 +53,7 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
         </button>
 
         <nav className="hidden items-center gap-2 md:flex">
-          {token ? (
+          {authenticated ? (
             <>
               <Link 
                 to={homePath}
@@ -62,10 +63,19 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
               </Link>
               {role === 'ROLE_TIPSTER' && (
                 <Link
-                  to="/tipster/perfil"
+                  to="/perfil"
                   className="rounded-md px-3 py-2 text-sm font-medium text-light transition-colors hover:text-gray-200"
                 >
                   Mi perfil
+                </Link>
+              )}
+              {role === 'ROLE_TIPSTER' && (
+                <Link
+                  to="/guardados"
+                  className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-light transition-colors hover:text-gray-200"
+                >
+                  <Bookmark className="h-4 w-4" />
+                  Guardados
                 </Link>
               )}
               {role === 'ROLE_ADMIN' && (
@@ -85,17 +95,17 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
             </>
           ) : (
             <>
-              <Link 
-                to="/login" 
-                className="rounded-md px-3 py-2 text-sm font-medium text-light transition-colors hover:text-gray-200"
-              >
-                Iniciar Sesión
-              </Link>
+                <Link 
+                  to="/login" 
+                  className="rounded-md px-3 py-2 text-sm font-medium text-light transition-colors hover:text-gray-200"
+                >
+                  Iniciar Sesión
+                </Link>
               <Link 
                 to="/registro" 
                 className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-primaryBlue shadow-sm transition-colors hover:bg-gray-100"
               >
-                Registrarse
+                Ser tipster
               </Link>
             </>
           )}
@@ -105,7 +115,7 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
       {isMenuOpen && (
         <div className="border-t border-white/10 bg-primaryBlue/98 px-4 pb-4 pt-2 md:hidden">
           <nav className="flex flex-col gap-2">
-            {token ? (
+            {authenticated ? (
               <>
                 <Link 
                   to={homePath}
@@ -116,11 +126,21 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
                 </Link>
                 {role === 'ROLE_TIPSTER' && (
                   <Link
-                    to="/tipster/perfil"
+                    to="/perfil"
                     onClick={closeMenu}
                     className="rounded-xl px-4 py-3 text-sm font-medium text-light transition-colors hover:bg-white/10"
                   >
                     Mi perfil
+                  </Link>
+                )}
+                {role === 'ROLE_TIPSTER' && (
+                  <Link
+                    to="/guardados"
+                    onClick={closeMenu}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-light transition-colors hover:bg-white/10"
+                  >
+                    <Bookmark className="h-4 w-4" />
+                    Guardados
                   </Link>
                 )}
                 {role === 'ROLE_ADMIN' && (
@@ -153,7 +173,7 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
                   onClick={closeMenu}
                   className="rounded-xl bg-white px-4 py-3 text-sm font-medium text-primaryBlue shadow-sm transition-colors hover:bg-gray-100"
                 >
-                  Registrarse
+                  Ser tipster
                 </Link>
               </>
             )}

@@ -6,6 +6,8 @@ import { useApi } from "@/hooks/useApi";
 import { getAuthUserId } from "@/lib/auth";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { PostCard } from "@/components/posts/PostCard";
+import { sharePostLink } from "@/components/posts/post-utils";
+import { useAuthStore } from "@/stores/authStore";
 import type { ApiResponse, CatalogItem, CompetitionItem } from "@/types/catalog";
 import type {
   CommentItem,
@@ -18,10 +20,17 @@ import type {
   Sportsbook,
 } from "@/types/posts";
 
-export function PostsFeedScreen() {
+interface PostsFeedScreenProps {
+  mode?: "feed" | "saved";
+}
+
+export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const api = useApi();
   const navigate = useNavigate();
   const currentUserId = useMemo(() => getAuthUserId(), []);
+  const role = useAuthStore((state) => state.role);
+  const canCreatePosts = role === "ROLE_TIPSTER";
+  const isSavedMode = mode === "saved";
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [sports, setSports] = useState<CatalogItem[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([]);
@@ -57,19 +66,23 @@ export function PostsFeedScreen() {
       }
 
       try {
-        const endpoint = authorId != null ? `/posts/users/${authorId}` : "/posts/feed";
+        const endpoint = isSavedMode
+          ? "/posts/saved"
+          : authorId != null
+            ? `/posts/users/${authorId}`
+            : "/posts/feed";
         const { data } = await api.get<ApiResponse<PagedResponse<PostItem>>>(endpoint, {
           params: { page: nextPage, size: 10 },
         });
         applyFeedResponse(data.data, append);
       } catch {
-        toast.error("No se pudo cargar el feed.");
+        toast.error(isSavedMode ? "No se pudieron cargar los posts guardados." : "No se pudo cargar el feed.");
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [api, applyFeedResponse, authorFilter]
+    [api, applyFeedResponse, authorFilter, isSavedMode]
   );
 
   useEffect(() => {
@@ -77,6 +90,10 @@ export function PostsFeedScreen() {
 
     (async () => {
       try {
+        if (!canCreatePosts) {
+          return;
+        }
+
         const [sportsResponse, competitionsResponse, sportsbookResponse, homePrashesResponse] = await Promise.all([
           api.get<ApiResponse<CatalogItem[]>>("/catalogs/sports"),
           api.get<ApiResponse<CompetitionItem[]>>("/catalogs/competitions"),
@@ -102,7 +119,7 @@ export function PostsFeedScreen() {
     return () => {
       cancelled = true;
     };
-  }, [api]);
+  }, [api, canCreatePosts]);
 
   useEffect(() => {
     void loadFeed(0, false, authorFilter);
@@ -202,67 +219,93 @@ export function PostsFeedScreen() {
     [api, updatePost]
   );
 
+  const handleToggleCommentLike = useCallback(
+    async (postId: number, commentId: number) => {
+      try {
+        const { data } = await api.put<ApiResponse<CommentItem>>(
+          `/posts/${postId}/comments/${commentId}/like`
+        );
+        return data.data;
+      } catch {
+        toast.error("No se pudo actualizar el like del comentario.");
+        return null;
+      }
+    },
+    [api]
+  );
+
   const handleSave = useCallback(
     async (postId: number) => {
       try {
         const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${postId}/save`);
-        updatePost(postId, (current) => ({
-          ...current,
-          metrics: {
-            ...current.metrics,
-            savedByCurrentUser: data.data.active,
-            savesCount: Math.max(0, current.metrics.savesCount + (data.data.active ? 1 : -1)),
-          },
-        }));
+        if (isSavedMode && !data.data.active) {
+          setPosts((current) => current.filter((post) => post.id !== postId));
+        } else {
+          updatePost(postId, (current) => ({
+            ...current,
+            metrics: {
+              ...current.metrics,
+              savedByCurrentUser: data.data.active,
+              savesCount: Math.max(0, current.metrics.savesCount + (data.data.active ? 1 : -1)),
+            },
+          }));
+        }
         return data.data.active;
       } catch {
         toast.error("No se pudo actualizar el guardado.");
         return null;
       }
     },
-    [api, updatePost]
+    [api, isSavedMode, updatePost]
   );
 
   const handleRepost = useCallback(
-    async (postId: number) => {
+    async (post: PostItem) => {
       try {
-        const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${postId}/repost`);
-        updatePost(postId, (current) => ({
-          ...current,
-          metrics: {
-            ...current.metrics,
-            repostedByCurrentUser: data.data.active,
-            repostsCount: Math.max(0, current.metrics.repostsCount + (data.data.active ? 1 : -1)),
-          },
-        }));
+        const { data } = await api.put<ApiResponse<{ active: boolean }>>(`/posts/${post.id}/repost`);
+        if (post.repostEntry && post.repostedBy?.id === currentUserId && !data.data.active) {
+          setPosts((current) => current.filter((item) => item.timelineEntryId !== post.timelineEntryId));
+        } else {
+          updatePost(post.id, (current) => ({
+            ...current,
+            metrics: {
+              ...current.metrics,
+              repostedByCurrentUser: data.data.active,
+              repostsCount: Math.max(0, current.metrics.repostsCount + (data.data.active ? 1 : -1)),
+            },
+          }));
+        }
         return data.data.active;
       } catch {
         toast.error("No se pudo actualizar el repost.");
         return null;
       }
     },
-    [api, updatePost]
+    [api, currentUserId, updatePost]
   );
 
   const handleShare = useCallback(
-    async (postId: number) => {
+    async (post: PostItem) => {
       try {
-        if (navigator.share) {
-          await navigator.share({ title: "Picka post", text: "Mira este post de tipster" });
+        const shareResult = await sharePostLink(post.id);
+        if (!shareResult.completed) {
+          return null;
         }
+        toast.success(
+          shareResult.copied ? "Enlace copiado al portapapeles." : "Enlace listo para compartir."
+        );
       } catch {
-        // ignore cancellation
+        toast.error("No se pudo preparar el enlace para compartir.");
+        return null;
       }
 
       try {
-        const { data } = await api.post<ApiResponse<PostMetrics>>(`/posts/${postId}/share`, {
+        const { data } = await api.post<ApiResponse<PostMetrics>>(`/posts/${post.id}/share`, {
           channel: "WEB",
         });
-        updatePost(postId, (current) => ({ ...current, metrics: data.data }));
-        toast.success("Share registrado.");
+        updatePost(post.id, (current) => ({ ...current, metrics: data.data }));
         return data.data;
       } catch {
-        toast.error("No se pudo registrar el share.");
         return null;
       }
     },
@@ -326,7 +369,11 @@ export function PostsFeedScreen() {
   );
 
   const handleViewProfile = useCallback((authorId: number) => {
-    navigate(`/tipster/perfil/${authorId}`);
+    navigate(`/perfil/${authorId}`);
+  }, [navigate]);
+
+  const handleOpenDetail = useCallback((postId: number) => {
+    navigate(`/posts/${postId}`);
   }, [navigate]);
 
   const clearAuthorFilter = useCallback(() => {
@@ -334,13 +381,28 @@ export function PostsFeedScreen() {
   }, []);
 
   const openComposer = useCallback(() => {
+    if (!canCreatePosts) {
+      return;
+    }
     if (isMobileViewport) {
       navigate("/tipster/posts/nuevo");
       return;
     }
 
     setIsComposerOpen(true);
-  }, [isMobileViewport, navigate]);
+  }, [canCreatePosts, isMobileViewport, navigate]);
+
+  const showAuthorFilter = !isSavedMode && authorFilter != null;
+  const title = showAuthorFilter ? `Viendo posts del autor #${authorFilter}` : isSavedMode ? "Posts guardados" : "Feed general";
+  const description = showAuthorFilter
+    ? "Puedes volver al feed principal cuando quieras."
+    : isSavedMode
+      ? "Consulta y administra las publicaciones que guardaste."
+      : "Timeline listo para analisis, picks simples y parleys.";
+  const loadingMessage = isSavedMode ? "Cargando posts guardados..." : "Cargando feed...";
+  const emptyMessage = isSavedMode
+    ? "Todavia no has guardado publicaciones."
+    : "Todavia no hay publicaciones para este filtro.";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(237,95,47,0.22),_transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
@@ -353,25 +415,25 @@ export function PostsFeedScreen() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-slate-900">
-                  {authorFilter != null ? `Viendo posts del autor #${authorFilter}` : "Feed general"}
+                  {title}
                 </p>
                 <p className="text-sm text-slate-500">
-                  {authorFilter != null
-                    ? "Puedes volver al feed principal cuando quieras."
-                    : "Timeline listo para análisis, picks simples y parleys."}
+                  {description}
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={openComposer}
-                className="inline-flex items-center gap-2 rounded-full bg-[#ed5f2f] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(237,95,47,0.22)] transition hover:bg-[#d95225]"
-              >
-                <Plus className="h-4 w-4" />
-                Nuevo post
-              </button>
-              {authorFilter != null && (
+              {canCreatePosts && (
+                <button
+                  type="button"
+                  onClick={openComposer}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#ed5f2f] px-4 py-2 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(237,95,47,0.22)] transition hover:bg-[#d95225]"
+                >
+                  <Plus className="h-4 w-4" />
+                  Nuevo post
+                </button>
+              )}
+              {showAuthorFilter && (
                 <button
                   type="button"
                   onClick={clearAuthorFilter}
@@ -393,21 +455,22 @@ export function PostsFeedScreen() {
 
           {loading ? (
             <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
-              Cargando feed...
+              {loadingMessage}
             </div>
           ) : posts.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
-              Todavía no hay publicaciones para este filtro.
+              {emptyMessage}
             </div>
           ) : (
             <div className="space-y-6">
               {posts.map((post) => (
                 <PostCard
-                  key={post.id}
+                  key={post.timelineEntryId}
                   post={post}
                   currentUserId={currentUserId}
                   onViewProfile={handleViewProfile}
                   onToggleReaction={handleReaction}
+                  onToggleCommentLike={handleToggleCommentLike}
                   onToggleSave={handleSave}
                   onToggleRepost={handleRepost}
                   onShare={handleShare}
@@ -415,6 +478,7 @@ export function PostsFeedScreen() {
                   onComment={handleComment}
                   onUpdatePickStatus={handleUpdatePickStatus}
                   onRegisterView={handleRegisterView}
+                  onOpenDetail={handleOpenDetail}
                 />
               ))}
               {hasNext && (
@@ -434,7 +498,7 @@ export function PostsFeedScreen() {
         </section>
       </div>
 
-      {showFloatingComposerButton && !isComposerOpen && (
+      {canCreatePosts && showFloatingComposerButton && !isComposerOpen && (
         <button
           type="button"
           onClick={openComposer}
@@ -445,7 +509,7 @@ export function PostsFeedScreen() {
         </button>
       )}
 
-      {isComposerOpen && (
+      {canCreatePosts && isComposerOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-slate-950/55 px-4 py-6 sm:items-center sm:px-6">
           <div className="relative w-full max-w-4xl rounded-[2rem] bg-[#eef5fa] p-3 shadow-[0_30px_90px_rgba(13,38,76,0.32)] sm:p-5">
             <button

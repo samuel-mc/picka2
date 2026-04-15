@@ -46,16 +46,16 @@ export const TipsterLogin = () => {
             <div className="relative flex h-full flex-col justify-between p-10 text-white xl:p-12">
               <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/85">
                 <Sparkles className="h-4 w-4" />
-                Tipster Access
+                Picka2 Access
               </div>
 
               <div className="max-w-xl">
                 <h1 className="text-4xl font-black leading-[1.02] xl:text-5xl">
-                  Entra a tu espacio y publica picks con presencia.
+                  Entra a tu espacio y sigue construyendo tu perfil de tipster.
                 </h1>
                 <p className="mt-5 max-w-lg text-base leading-7 text-white/80 xl:text-lg">
-                  Administra tu perfil, comparte análisis y mueve tu contenido con una interfaz
-                  pensada para tipsters serios.
+                  Desde aquí entras al feed, guardas picks, comentas publicaciones y gestionas
+                  tu presencia dentro de Picka2.
                 </p>
               </div>
 
@@ -85,7 +85,7 @@ export const TipsterLogin = () => {
                 <div className="mb-6">
                   <div className="inline-flex items-center gap-2 rounded-full bg-[#edf5fb] px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] text-[#0f4c81]">
                     <ShieldCheck className="h-4 w-4" />
-                    Login Tipster
+                    Login tipster
                   </div>
                   <h2 className="mt-4 text-3xl font-black leading-tight text-slate-900 sm:text-4xl">
                     Iniciar sesión
@@ -96,13 +96,20 @@ export const TipsterLogin = () => {
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)}>
+                <form
+                  onSubmit={handleSubmit(onSubmit)}
+                  autoComplete="on"
+                  method="post"
+                  action="/login"
+                  name="tipster-login"
+                >
                   <div className="flex flex-col">
                     <RegisterInput<Inputs>
                       name="username"
                       label="Username o correo electrónico"
                       register={register}
                       fieldError={errors.username}
+                      autoComplete="username"
                       required
                     />
                     <RegisterInput<Inputs>
@@ -111,6 +118,7 @@ export const TipsterLogin = () => {
                       register={register}
                       fieldError={errors.password}
                       type="password"
+                      autoComplete="current-password"
                       required
                     />
                     <div className="mt-1 text-right">
@@ -133,13 +141,15 @@ export const TipsterLogin = () => {
                 </form>
 
                 <div className="mt-6 border-t border-slate-200 pt-5 text-center">
-                  <span className="text-sm text-slate-600">¿No tienes cuenta? </span>
-                  <Link
-                    to="/registro"
-                    className="text-sm font-semibold text-primaryBlue transition hover:underline"
-                  >
-                    Regístrate aquí
-                  </Link>
+                  <p className="text-sm text-slate-600">
+                    ¿Todavía no tienes cuenta?{" "}
+                    <Link
+                      to="/registro"
+                      className="font-semibold text-primaryBlue transition hover:underline"
+                    >
+                      Regístrate como tipster
+                    </Link>
+                  </p>
                 </div>
               </div>
             </div>

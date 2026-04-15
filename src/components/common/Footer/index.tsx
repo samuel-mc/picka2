@@ -44,13 +44,13 @@ const Footer = () => {
         <div className="mx-auto grid max-w-7xl gap-12 px-6 py-14 sm:px-8 lg:grid-cols-[1.2fr_0.9fr_1.1fr] lg:px-10">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-light/85">
-              Picka
+              Picka2
             </div>
             <h2 className="mt-5 max-w-md text-3xl font-semibold leading-tight text-white">
-              Una plataforma para descubrir, evaluar y seguir a los mejores tipsters.
+              Una plataforma para publicar, medir y seguir a los mejores tipsters.
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-7 text-light/80">
-              Diseñamos una experiencia más clara y confiable para que usuarios y tipsters trabajen con métricas, reputación y presencia profesional.
+              Diseñamos una experiencia más clara y confiable para que admins y tipsters trabajen con métricas, reputación y presencia profesional.
             </p>
             <div className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm text-light/85">
               <Mail size={18} />
@@ -102,7 +102,7 @@ const Footer = () => {
 
       <div className="border-t border-white/10 bg-[rgba(6,23,47,0.35)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-sm text-light/70 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
-          <p>© 2026 Picka. Todos los derechos reservados.</p>
+          <p>© 2026 Picka2. Todos los derechos reservados.</p>
           <div className="flex flex-wrap gap-5">
             <span>Estadísticas verificadas</span>
             <span>Acceso para tipsters</span>

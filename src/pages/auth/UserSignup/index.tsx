@@ -46,13 +46,13 @@ export const UserSignup = () => {
 
     try {
       const payload = formatFormData(data);
-      await api.post("/auth/register-user", payload);
-      toast.success("Usuario creado correctamente");
+      await api.post("/auth/register-admin", payload);
+      toast.success("Administrador creado correctamente");
       navigate("/admin/usuarios", { replace: true });
     } catch (error: any) {
       console.error("Error en registro:", error);
       toast.error(
-        error?.response?.data?.message || "Error al generar el usuario"
+        error?.response?.data?.message || "Error al generar el administrador"
       );
     } finally {
       setIsLoading(false);

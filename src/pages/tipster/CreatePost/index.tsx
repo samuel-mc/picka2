@@ -89,7 +89,7 @@ export default function CreatePostPage() {
       try {
         await api.post<ApiResponse<PostItem>>("/posts", payload);
         toast.success("Post publicado.");
-        navigate("/tipster/posts");
+        navigate("/feed");
       } catch (error: unknown) {
         const message =
           (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
@@ -108,7 +108,7 @@ export default function CreatePostPage() {
         <div className="mx-auto max-w-4xl space-y-4 sm:space-y-5">
           <button
             type="button"
-            onClick={() => navigate("/tipster/posts")}
+            onClick={() => navigate("/feed")}
             className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur"
           >
             <ArrowLeft className="h-4 w-4" />

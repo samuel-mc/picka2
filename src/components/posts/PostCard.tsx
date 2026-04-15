@@ -1,14 +1,15 @@
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import {
+  BadgeCheck,
   Bookmark,
+  ExternalLink,
   MessageCircle,
   Repeat2,
   Share2,
   ThumbsDown,
   ThumbsUp,
   Trophy,
-  UserRound,
 } from "lucide-react";
 import type {
   CommentItem,
@@ -44,13 +45,18 @@ interface Props {
   currentUserId: number | null;
   onViewProfile: (authorId: number) => void;
   onToggleReaction: (postId: number, type: ReactionType) => Promise<PostMetrics | null>;
+  onToggleCommentLike: (postId: number, commentId: number) => Promise<CommentItem | null>;
   onToggleSave: (postId: number) => Promise<boolean | null>;
-  onToggleRepost: (postId: number) => Promise<boolean | null>;
-  onShare: (postId: number) => Promise<PostMetrics | null>;
+  onToggleRepost: (post: PostItem) => Promise<boolean | null>;
+  onShare: (post: PostItem) => Promise<PostMetrics | null>;
   onLoadComments: (postId: number) => Promise<CommentItem[]>;
   onComment: (postId: number, content: string) => Promise<CommentItem | null>;
   onUpdatePickStatus: (postId: number, status: ResultStatus) => Promise<void>;
   onRegisterView: (postId: number) => Promise<void>;
+  onOpenDetail?: (postId: number) => void;
+  registerViewOnMount?: boolean;
+  readOnly?: boolean;
+  defaultCommentsOpen?: boolean;
 }
 
 export function PostCard({
@@ -58,6 +64,7 @@ export function PostCard({
   currentUserId,
   onViewProfile,
   onToggleReaction,
+  onToggleCommentLike,
   onToggleSave,
   onToggleRepost,
   onShare,
@@ -65,34 +72,74 @@ export function PostCard({
   onComment,
   onUpdatePickStatus,
   onRegisterView,
+  onOpenDetail,
+  registerViewOnMount = true,
+  readOnly = false,
+  defaultCommentsOpen = false,
 }: Props) {
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentValue, setCommentValue] = useState("");
   const [loadingComments, setLoadingComments] = useState(false);
   const [sendingComment, setSendingComment] = useState(false);
 
   useEffect(() => {
+    if (!registerViewOnMount) {
+      return;
+    }
     void onRegisterView(post.id);
-  }, [onRegisterView, post.id]);
+  }, [onRegisterView, post.id, registerViewOnMount]);
 
-  const isOwner = currentUserId === post.author.id;
+  useEffect(() => {
+    if (readOnly || !commentsOpen || comments.length > 0) {
+      return;
+    }
 
-  const openComments = async () => {
-    const nextOpen = !commentsOpen;
-    setCommentsOpen(nextOpen);
-    if (nextOpen && comments.length === 0) {
-      setLoadingComments(true);
+    let cancelled = false;
+    setLoadingComments(true);
+
+    void (async () => {
       try {
         const loaded = await onLoadComments(post.id);
-        setComments(loaded);
+        if (!cancelled) {
+          setComments(loaded);
+        }
       } finally {
-        setLoadingComments(false);
+        if (!cancelled) {
+          setLoadingComments(false);
+        }
       }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [comments.length, commentsOpen, onLoadComments, post.id, readOnly]);
+
+  const isOwner = currentUserId === post.author.id;
+  const canOpenDetail = Boolean(onOpenDetail);
+
+  const handleOpenDetail = () => {
+    if (!onOpenDetail) return;
+    onOpenDetail(post.id);
+  };
+
+  const handleKeyboardOpenDetail = (event: KeyboardEvent<HTMLElement>) => {
+    if (!onOpenDetail) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    onOpenDetail(post.id);
+  };
+
+  const openComments = async () => {
+    if (readOnly) {
+      return;
     }
+    setCommentsOpen((current) => !current);
   };
 
   const submitComment = async () => {
+    if (readOnly) return;
     if (!commentValue.trim()) return;
     setSendingComment(true);
     try {
@@ -106,11 +153,39 @@ export function PostCard({
     }
   };
 
+  const toggleCommentLike = async (commentId: number) => {
+    if (readOnly) return;
+    const updated = await onToggleCommentLike(post.id, commentId);
+    if (!updated) return;
+    setComments((current) =>
+      current.map((comment) => (comment.id === commentId ? updated : comment))
+    );
+  };
+
   return (
     <article className="overflow-hidden rounded-[1.6rem] border border-white/70 bg-white/90 shadow-[0_18px_55px_rgba(15,76,129,0.10)] backdrop-blur sm:rounded-[2rem]">
       <div className="p-4 sm:p-6">
+        {post.repostEntry && post.repostedBy && (
+          <div className="mb-4 flex items-center gap-2 rounded-full bg-[#edf5fb] px-4 py-2 text-sm font-medium text-[#0f4c81]">
+            <Repeat2 className="h-4 w-4" />
+            <span className="min-w-0 truncate">
+              Reposteado por <strong>{post.repostedBy.name}</strong>
+            </span>
+            {post.repostedBy.validatedTipster && <BadgeCheck className="h-4 w-4 text-emerald-600" />}
+            {post.repostedAt && (
+              <span className="ml-auto hidden text-xs text-slate-500 sm:inline">
+                {formatDate(post.repostedAt)}
+              </span>
+            )}
+          </div>
+        )}
+
         <header className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
-          <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <button
+            type="button"
+            onClick={() => onViewProfile(post.author.id)}
+            className="flex min-w-0 items-center gap-3 text-left transition hover:opacity-90 sm:gap-4"
+          >
             <img
               src={post.author.avatarUrl || GENERIC_AVATAR}
               alt={post.author.name}
@@ -136,24 +211,23 @@ export function PostCard({
                 {formatDate(post.createdAt)}
               </p>
             </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => onViewProfile(post.author.id)}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-600 transition hover:border-[#0f4c81] hover:text-[#0f4c81] sm:w-auto"
-          >
-            <UserRound className="h-4 w-4" />
-            Ver perfil
           </button>
         </header>
 
-        <div className="mt-4 space-y-4 sm:mt-5">
+        <div
+          className={`mt-4 space-y-4 sm:mt-5 ${canOpenDetail ? "cursor-pointer" : ""}`}
+          onClick={handleOpenDetail}
+          onKeyDown={handleKeyboardOpenDetail}
+          role={canOpenDetail ? "button" : undefined}
+          tabIndex={canOpenDetail ? 0 : undefined}
+          aria-label={canOpenDetail ? "Abrir detalle del post" : undefined}
+        >
           <p className="whitespace-pre-wrap text-sm leading-7 text-slate-700 sm:text-[15px]">
             {post.content}
           </p>
 
           {post.mediaUrls[0] && (
-            <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 sm:rounded-[1.6rem]">
+            <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 transition hover:border-[#0f4c81]/35 sm:rounded-[1.6rem]">
               <img
                 src={post.mediaUrls[0]}
                 alt="Post media"
@@ -176,7 +250,7 @@ export function PostCard({
           )}
 
           {(post.simplePick || post.parley) && (
-            <section className="rounded-[1.4rem] border border-[#cfe1ee] bg-[#f6fbfe] p-4 sm:rounded-[1.8rem]">
+            <section className="rounded-[1.4rem] border border-[#cfe1ee] bg-[#f6fbfe] p-4 transition hover:border-[#0f4c81]/35 sm:rounded-[1.8rem]">
               <div className="mb-4 flex items-center gap-2">
                 <Trophy className="h-4 w-4 text-[#ed5f2f]" />
                 <h4 className="font-semibold text-slate-900">
@@ -238,67 +312,82 @@ export function PostCard({
                   </p>
                 </div>
               )}
-
-              {isOwner && post.parley && (
-                <div className="mt-4">
-                  <StatusQuickUpdate onChange={(status) => onUpdatePickStatus(post.id, status)} />
-                </div>
-              )}
             </section>
           )}
         </div>
+
+        {!readOnly && isOwner && post.parley && (
+          <div className="mt-4">
+            <StatusQuickUpdate onChange={(status) => onUpdatePickStatus(post.id, status)} />
+          </div>
+        )}
       </div>
 
       <footer className="border-t border-slate-100 bg-slate-50/80 px-4 py-4 sm:px-6">
-        <div className="flex flex-wrap gap-2 justify-between">
-          <div className="flex gap-2">
-            <ActionButton
-              active={post.metrics.currentUserReaction === "LIKE"}
-              onClick={() => void onToggleReaction(post.id, "LIKE")}
-              icon={<ThumbsUp className="h-4 w-4" />}
-              label=""
-              count={post.metrics.likesCount}
-            />
-            <ActionButton
-              active={post.metrics.currentUserReaction === "DISLIKE"}
-              onClick={() => void onToggleReaction(post.id, "DISLIKE")}
-              icon={<ThumbsDown className="h-4 w-4" />}
-              label=""
-              count={post.metrics.dislikesCount}
-            />
-            <ActionButton
-              active={commentsOpen}
-              onClick={() => void openComments()}
-              icon={<MessageCircle className="h-4 w-4" />}
-              label=""
-              count={post.metrics.commentsCount}
-            />
-            <ActionButton
-              active={post.metrics.repostedByCurrentUser}
-              onClick={() => void onToggleRepost(post.id)}
-              icon={<Repeat2 className="h-4 w-4" />}
-              label=""
-              count={post.metrics.repostsCount}
-            />
+        {readOnly ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <MetricPill icon={<ThumbsUp className="h-4 w-4" />} value={post.metrics.likesCount} />
+            <MetricPill icon={<ThumbsDown className="h-4 w-4" />} value={post.metrics.dislikesCount} />
+            <MetricPill icon={<MessageCircle className="h-4 w-4" />} value={post.metrics.commentsCount} />
+            <MetricPill icon={<Repeat2 className="h-4 w-4" />} value={post.metrics.repostsCount} />
+            <MetricPill icon={<Share2 className="h-4 w-4" />} value={post.metrics.sharesCount} />
           </div>
-          <div className="flex gap-2">
-            <ActionButton
-              active={post.metrics.savedByCurrentUser}
-              onClick={() => void onToggleSave(post.id)}
-              icon={<Bookmark className="h-4 w-4" />}
-              label=""
-              count={post.metrics.savesCount}
-            />
-            <ActionButton
-              onClick={() => void onShare(post.id)}
-              icon={<Share2 className="h-4 w-4" />}
-              label=""
-              count={post.metrics.sharesCount}
-            />
+        ) : (
+          <div className="flex flex-wrap gap-2 justify-between">
+            <div className="flex gap-2">
+              <ActionButton
+                active={post.metrics.currentUserReaction === "LIKE"}
+                onClick={() => void onToggleReaction(post.id, "LIKE")}
+                icon={<ThumbsUp className="h-4 w-4" />}
+                label=""
+                count={post.metrics.likesCount}
+              />
+              <ActionButton
+                active={post.metrics.currentUserReaction === "DISLIKE"}
+                onClick={() => void onToggleReaction(post.id, "DISLIKE")}
+                icon={<ThumbsDown className="h-4 w-4" />}
+                label=""
+                count={post.metrics.dislikesCount}
+              />
+              <ActionButton
+                active={commentsOpen}
+                onClick={() => void openComments()}
+                icon={<MessageCircle className="h-4 w-4" />}
+                label=""
+                count={post.metrics.commentsCount}
+              />
+              <ActionButton
+                active={post.metrics.repostedByCurrentUser}
+                onClick={() => void onToggleRepost(post)}
+                icon={<Repeat2 className="h-4 w-4" />}
+                label=""
+                count={post.metrics.repostsCount}
+              />
+            </div>
+            <div className="flex gap-2">
+              {onOpenDetail && (
+                <ActionButton
+                  onClick={() => onOpenDetail(post.id)}
+                  icon={<ExternalLink className="h-4 w-4" />}
+                  label=""
+                />
+              )}
+              <ActionButton
+                active={post.metrics.savedByCurrentUser}
+                onClick={() => void onToggleSave(post.id)}
+                icon={<Bookmark className="h-4 w-4" />}
+                label=""
+              />
+              <ActionButton
+                onClick={() => void onShare(post)}
+                icon={<Share2 className="h-4 w-4" />}
+                label=""
+              />
+            </div>
           </div>
-        </div>
+        )}
 
-        {commentsOpen && (
+        {!readOnly && commentsOpen && (
           <div className="mt-4 rounded-[1.35rem] border border-slate-200 bg-white p-4 sm:rounded-[1.6rem]">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row">
               <textarea
@@ -326,15 +415,32 @@ export function PostCard({
               <div className="space-y-3">
                 {comments.map((comment) => (
                   <div key={comment.id} className="rounded-2xl bg-slate-50 px-4 py-3">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                      <p className="text-sm font-semibold text-slate-800">
-                        {comment.author.name}
-                      </p>
-                      <span className="text-xs text-slate-400">
-                        {formatDate(comment.createdAt)}
-                      </span>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                          <p className="text-sm font-semibold text-slate-800">
+                            {comment.author.name}
+                          </p>
+                          <span className="text-xs text-slate-400">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-600">{comment.content}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => void toggleCommentLike(comment.id)}
+                        className={`inline-flex min-h-10 shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition ${
+                          comment.likedByCurrentUser
+                            ? "bg-[#0f4c81] text-white shadow-sm"
+                            : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-[#0f4c81]/35"
+                        }`}
+                        aria-label={comment.likedByCurrentUser ? "Quitar like del comentario" : "Dar like al comentario"}
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        <span>{comment.likesCount}</span>
+                      </button>
                     </div>
-                    <p className="mt-2 text-sm text-slate-600">{comment.content}</p>
                   </div>
                 ))}
               </div>
@@ -343,6 +449,15 @@ export function PostCard({
         )}
       </footer>
     </article>
+  );
+}
+
+function MetricPill({ icon, value }: { icon: ReactNode; value: number }) {
+  return (
+    <span className="inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-3 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 sm:px-4">
+      <span className="shrink-0">{icon}</span>
+      <span>{value}</span>
+    </span>
   );
 }
 
@@ -372,12 +487,12 @@ function ActionButton({
       } ${compact ? "w-full justify-start rounded-2xl" : ""}`}
     >
       <span className="shrink-0">{icon}</span>
-      {label ? (
+      {(label || typeof count === "number") && (
         <span className="leading-none">
           {label}
-          {typeof count === "number" ? ` ${count}` : ""}
+          {typeof count === "number" ? `${label ? " " : ""}${count}` : ""}
         </span>
-      ) : null}
+      )}
     </button>
   );
 }

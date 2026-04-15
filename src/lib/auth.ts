@@ -1,31 +1,19 @@
 import { useAuthStore } from "@/stores/authStore";
 
-export const getAuthToken = () => useAuthStore.getState().token;
-
 export const getAuthRole = () => useAuthStore.getState().role;
 
-export const getAuthUserId = (): number | null => {
-  const fromStore = useAuthStore.getState().userId;
-  if (fromStore != null && Number.isFinite(fromStore)) {
-    return fromStore;
-  }
-  const token = useAuthStore.getState().token;
-  if (!token) return null;
-  try {
-    const parts = token.split(".");
-    if (parts.length < 2) return null;
-    const json = JSON.parse(atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")));
-    const uid = json.userId;
-    if (typeof uid === "number" && Number.isFinite(uid)) return uid;
-    if (uid != null) {
-      const n = Number(uid);
-      return Number.isFinite(n) ? n : null;
-    }
-    return null;
-  } catch {
-    return null;
-  }
+export const getDefaultAppPath = (role: string | null | undefined) => {
+  if (role === "ROLE_ADMIN") return "/admin/panel";
+  if (role === "ROLE_TIPSTER") return "/feed";
+  return "/";
 };
+
+export const getAuthUserId = (): number | null => {
+  const userId = useAuthStore.getState().userId;
+  return userId != null && Number.isFinite(userId) ? userId : null;
+};
+
+export const isAuthenticated = () => useAuthStore.getState().authenticated;
 
 export const clearAuthSession = () => {
   useAuthStore.getState().clearAuth();
