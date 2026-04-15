@@ -1,5 +1,6 @@
 import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { Dialog } from "@base-ui/react/dialog";
 import {
   BadgeCheck,
   Bookmark,
@@ -9,6 +10,7 @@ import {
   ThumbsDown,
   ThumbsUp,
   Trophy,
+  X,
 } from "lucide-react";
 import type {
   CommentItem,
@@ -58,6 +60,7 @@ interface Props {
   registerViewOnMount?: boolean;
   readOnly?: boolean;
   defaultCommentsOpen?: boolean;
+  highlightCommentId?: number | null;
 }
 
 export function PostCard({
@@ -77,10 +80,12 @@ export function PostCard({
   registerViewOnMount = true,
   readOnly = false,
   defaultCommentsOpen = false,
+  highlightCommentId = null,
 }: Props) {
   const [commentsOpen, setCommentsOpen] = useState(defaultCommentsOpen);
   const [comments, setComments] = useState<CommentItem[]>([]);
   const [commentValue, setCommentValue] = useState("");
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [replyDrafts, setReplyDrafts] = useState<Record<number, string>>({});
   const [activeReplyFor, setActiveReplyFor] = useState<number | null>(null);
   const [sendingReplyFor, setSendingReplyFor] = useState<number | null>(null);
@@ -119,6 +124,21 @@ export function PostCard({
       cancelled = true;
     };
   }, [comments.length, commentsOpen, onLoadComments, post.id, readOnly]);
+
+  useEffect(() => {
+    if (!highlightCommentId || !commentsOpen || comments.length === 0) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const element = document.getElementById(`comment-${highlightCommentId}`);
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [comments.length, commentsOpen, highlightCommentId]);
 
   const isOwner = currentUserId === post.author.id;
   const canOpenDetail = Boolean(onOpenDetail);
@@ -251,13 +271,47 @@ export function PostCard({
           </p>
 
           {post.mediaUrls[0] && (
-            <div className="overflow-hidden rounded-[1.35rem] border border-slate-200 transition hover:border-[#0f4c81]/35 sm:rounded-[1.6rem]">
-              <img
-                src={post.mediaUrls[0]}
-                alt="Post media"
-                className="max-h-[320px] w-full object-cover sm:max-h-[420px]"
-              />
-            </div>
+            <Dialog.Root open={isImageViewerOpen} onOpenChange={setIsImageViewerOpen}>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setIsImageViewerOpen(true);
+                }}
+                onKeyDown={(event) => {
+                  event.stopPropagation();
+                }}
+                className="block w-full overflow-hidden rounded-[1.35rem] border border-slate-200 text-left transition hover:border-[#0f4c81]/35 focus:outline-none focus:ring-2 focus:ring-[#0f4c81]/35 sm:rounded-[1.6rem]"
+                aria-label="Abrir imagen en tamaño grande"
+              >
+                <img
+                  src={post.mediaUrls[0]}
+                  alt="Post media"
+                  className="max-h-[320px] w-full object-contain sm:max-h-[420px]"
+                />
+              </button>
+
+              <Dialog.Portal>
+                <Dialog.Backdrop className="fixed inset-0 z-50 bg-slate-950/80" />
+                <Dialog.Viewport className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
+                  <Dialog.Popup className="relative flex max-h-full w-full max-w-6xl items-center justify-center outline-none">
+                    <Dialog.Title className="sr-only">Imagen del post</Dialog.Title>
+                    <Dialog.Close
+                      className="absolute right-0 top-0 inline-flex h-11 w-11 -translate-y-14 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 sm:right-2 sm:top-2 sm:translate-x-14 sm:translate-y-0"
+                      aria-label="Cerrar visualizador"
+                    >
+                      <X className="h-5 w-5" />
+                    </Dialog.Close>
+
+                    <img
+                      src={post.mediaUrls[0]}
+                      alt="Post media en tamaño grande"
+                      className="max-h-[85vh] w-auto max-w-full rounded-[1.5rem] object-contain shadow-[0_24px_80px_rgba(15,23,42,0.45)]"
+                    />
+                  </Dialog.Popup>
+                </Dialog.Viewport>
+              </Dialog.Portal>
+            </Dialog.Root>
           )}
 
           {post.tags.length > 0 && (
@@ -438,6 +492,7 @@ export function PostCard({
                     activeReplyFor={activeReplyFor}
                     replyDrafts={replyDrafts}
                     sendingReplyFor={sendingReplyFor}
+                    highlightCommentId={highlightCommentId}
                     onToggleLike={toggleCommentLike}
                     onToggleReply={(commentId) =>
                       setActiveReplyFor((current) => (current === commentId ? null : commentId))
@@ -508,6 +563,7 @@ function CommentThread({
   activeReplyFor,
   replyDrafts,
   sendingReplyFor,
+  highlightCommentId,
   onToggleLike,
   onToggleReply,
   onChangeReplyDraft,
@@ -518,6 +574,7 @@ function CommentThread({
   activeReplyFor: number | null;
   replyDrafts: Record<number, string>;
   sendingReplyFor: number | null;
+  highlightCommentId: number | null;
   onToggleLike: (commentId: number) => Promise<void>;
   onToggleReply: (commentId: number) => void;
   onChangeReplyDraft: (commentId: number, value: string) => void;
@@ -531,8 +588,13 @@ function CommentThread({
   return (
     <div className="space-y-3">
       <div
+        id={`comment-${comment.id}`}
         className={`rounded-2xl px-4 py-3 ${
-          depth === 0 ? "bg-slate-50" : "border border-slate-200/80 bg-white"
+          highlightCommentId === comment.id
+            ? "border border-[#ed5f2f]/40 bg-amber-50/70 ring-2 ring-[#ed5f2f]/15"
+            : depth === 0
+              ? "bg-slate-50"
+              : "border border-slate-200/80 bg-white"
         }`}
       >
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
@@ -619,6 +681,7 @@ function CommentThread({
               activeReplyFor={activeReplyFor}
               replyDrafts={replyDrafts}
               sendingReplyFor={sendingReplyFor}
+              highlightCommentId={highlightCommentId}
               onToggleLike={onToggleLike}
               onToggleReply={onToggleReply}
               onChangeReplyDraft={onChangeReplyDraft}

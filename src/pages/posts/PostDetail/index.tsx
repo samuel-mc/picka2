@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, Lock, Share2 } from "lucide-react";
 import { TipsterLayout } from "@/layouts/TipsterLayout";
@@ -25,6 +25,7 @@ const noopVoid = async () => {};
 
 export default function PostDetailPage() {
   const { postId } = useParams<{ postId: string }>();
+  const [searchParams] = useSearchParams();
   const api = useApi();
   const navigate = useNavigate();
   const initialized = useAuthStore((state) => state.initialized);
@@ -35,6 +36,14 @@ export default function PostDetailPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const resolvedPostId = useMemo(() => Number(postId ?? NaN), [postId]);
+  const highlightCommentId = useMemo(() => {
+    const rawValue = searchParams.get("commentId");
+    if (!rawValue) {
+      return null;
+    }
+    const parsed = Number(rawValue);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [searchParams]);
   const isPublicMode = initialized && !authenticated;
 
   useEffect(() => {
@@ -350,7 +359,8 @@ export default function PostDetailPage() {
                 onRegisterView={isPublicMode ? noopVoid : handleRegisterView}
                 registerViewOnMount={!isPublicMode}
                 readOnly={isPublicMode}
-                defaultCommentsOpen={!isPublicMode}
+                defaultCommentsOpen={!isPublicMode || highlightCommentId != null}
+                highlightCommentId={highlightCommentId}
               />
 
               {isPublicMode && (
