@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   BadgeCheck,
   Bookmark,
-  ExternalLink,
   MessageCircle,
   Repeat2,
   Share2,
@@ -390,13 +389,6 @@ export function PostCard({
               />
             </div>
             <div className="flex gap-2">
-              {onOpenDetail && (
-                <ActionButton
-                  onClick={() => onOpenDetail(post.id)}
-                  icon={<ExternalLink className="h-4 w-4" />}
-                  label=""
-                />
-              )}
               <ActionButton
                 active={post.metrics.savedByCurrentUser}
                 onClick={() => void onToggleSave(post.id)}

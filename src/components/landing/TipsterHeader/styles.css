@@ -5,6 +5,7 @@
 .header-logo {
     display: block;
     height: auto;
+    max-width: 52px;
 }
 
 @media (max-width: 767px) {
