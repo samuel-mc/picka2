@@ -2,8 +2,15 @@ import type { KeyboardEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   BadgeCheck,
   Bookmark,
+  ChevronDown,
   MessageCircle,
   Repeat2,
   Share2,
@@ -362,6 +369,53 @@ export function PostCard({
                 <h4 className="font-semibold text-slate-900">
                   {post.type === "PARLEY" ? "Ticket del parley" : "Detalle del pick"}
                 </h4>
+                {!readOnly && isOwner && (post.simplePick || post.parley) ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      onClick={(event) => event.stopPropagation()}
+                      className={`ml-auto inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${getResultStatusClasses(
+                        post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
+                      )}`}
+                    >
+                      {getResultStatusLabel(
+                        post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
+                      )}
+                      <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      sideOffset={8}
+                      className="w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {(["PENDING", "WON", "LOST", "VOID"] as ResultStatus[]).map((status) => (
+                        <DropdownMenuItem
+                          key={status}
+                          onClick={() => void onUpdatePickStatus(post.id, status)}
+                          className="rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
+                        >
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
+                              status
+                            )}`}
+                          >
+                            {getResultStatusLabel(status)}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span
+                    className={`ml-auto rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
+                      post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
+                    )}`}
+                  >
+                    {getResultStatusLabel(
+                      post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
+                    )}
+                  </span>
+                )}
               </div>
 
               {post.simplePick && (
@@ -370,7 +424,6 @@ export function PostCard({
                   league={post.simplePick.league}
                   stake={post.simplePick.stake}
                   eventDate={post.simplePick.eventDate}
-                  resultStatus={post.simplePick.resultStatus}
                   sportsbook={post.simplePick.sportsbook?.name ?? null}
                 />
               )}
@@ -389,7 +442,6 @@ export function PostCard({
                   }
                   stake={post.parley.stake}
                   eventDate={post.parley.eventDate}
-                  resultStatus={post.parley.resultStatus}
                   sportsbook={post.parley.sportsbook?.name ?? null}
                 />
               )}
@@ -422,11 +474,6 @@ export function PostCard({
           )}
         </div>
 
-        {!readOnly && isOwner && post.parley && (
-          <div className="mt-4">
-            <StatusQuickUpdate onChange={(status) => onUpdatePickStatus(post.id, status)} />
-          </div>
-        )}
       </div>
 
       <footer className="border-t border-slate-100 bg-slate-50/80 px-4 py-4 sm:px-6">
@@ -772,14 +819,12 @@ function PickSummary({
   league,
   stake,
   eventDate,
-  resultStatus,
   sportsbook,
 }: {
   sport: string;
   league: string;
   stake: number | null;
   eventDate: string | null;
-  resultStatus: ResultStatus;
   sportsbook: string | null;
 }) {
   return (
@@ -789,16 +834,9 @@ function PickSummary({
       <StatChip label="Stake" value={stake != null ? String(stake) : "N/A"} />
       <StatChip label="Casa" value={sportsbook ?? "N/A"} />
       <div className="rounded-3xl bg-white p-3 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Estado</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fecha</p>
         <div className="mt-2 flex items-center justify-between gap-3">
           <span className="text-sm text-slate-600">{formatDate(eventDate)}</span>
-          <span
-            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
-              resultStatus
-            )}`}
-          >
-            {getResultStatusLabel(resultStatus)}
-          </span>
         </div>
       </div>
     </div>
@@ -810,27 +848,6 @@ function StatChip({ label, value }: { label: string; value: string }) {
     <div className="rounded-3xl bg-white p-3 shadow-sm">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
       <p className="mt-2 wrap-break-word text-sm font-medium text-slate-700">{value}</p>
-    </div>
-  );
-}
-
-function StatusQuickUpdate({ onChange }: { onChange: (status: ResultStatus) => Promise<void> }) {
-  const statuses: ResultStatus[] = ["PENDING", "WON", "LOST", "VOID"];
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {statuses.map((status) => (
-        <button
-          key={status}
-          type="button"
-          onClick={() => void onChange(status)}
-          className={`rounded-full px-4 py-2 text-xs font-semibold ring-1 ${getResultStatusClasses(
-            status
-          )}`}
-        >
-          Marcar {getResultStatusLabel(status)}
-        </button>
-      ))}
     </div>
   );
 }
