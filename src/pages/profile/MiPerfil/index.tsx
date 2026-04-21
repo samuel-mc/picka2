@@ -344,6 +344,20 @@ function MiPerfilForm() {
                   {avatarError}
                 </p>
               )}
+
+              <div className="mt-6">
+                <label htmlFor="bio" className="block text-sm font-medium text-slate-700 dm-sans">
+                  Bio
+                </label>
+                <textarea
+                  id="bio"
+                  value={bio}
+                  onChange={(ev) => setBio(ev.target.value)}
+                  rows={5}
+                  placeholder="Cuéntanos algo sobre ti, tu estilo o lo que quieres que otros vean en tu perfil."
+                  className="mt-2 min-h-[140px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primaryBlue focus:ring-4 focus:ring-primaryBlue/10"
+                />
+              </div>
             </section>
 
             <form onSubmit={saveProfile} className="space-y-6">
@@ -405,19 +419,6 @@ function MiPerfilForm() {
                   />
                 </div>
 
-                <div className="md:col-span-2">
-                  <label htmlFor="bio" className="block text-sm font-medium text-slate-700 dm-sans">
-                    Bio
-                  </label>
-                  <textarea
-                    id="bio"
-                    value={bio}
-                    onChange={(ev) => setBio(ev.target.value)}
-                    rows={5}
-                    placeholder="Cuéntanos algo sobre ti, tu estilo o lo que quieres que otros vean en tu perfil."
-                    className="mt-2 min-h-[140px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 outline-none transition focus:border-primaryBlue focus:ring-4 focus:ring-primaryBlue/10"
-                  />
-                </div>
               </div>
               </section>
 

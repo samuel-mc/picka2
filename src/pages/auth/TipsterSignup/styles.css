@@ -27,3 +27,24 @@
 textarea {
   resize: none;
 }
+
+@media (max-width: 767px) {
+  .tipster-signup-shell {
+    padding-top: 1.25rem;
+    padding-bottom: 2rem;
+    background:
+      radial-gradient(circle at top center, rgb(19 70 134 / 0.16), transparent 36%),
+      linear-gradient(180deg, #f8fbff 0%, #eef4ff 54%, #f8fafc 100%);
+  }
+
+  .tipster-signup-hero {
+    min-height: auto;
+    border-radius: 1.5rem;
+  }
+
+  .tipster-signup-stat {
+    border-radius: 0.9rem;
+    padding: 0.85rem 0.95rem;
+    font-size: 0.9rem;
+  }
+}

@@ -21,7 +21,6 @@ type Inputs = {
   password: string;
   passwordConfirm: string;
   birthDate: string;
-  bio: string;
   // avatarUrl is handled internally for now, but we can add it here if needed
 };
 
@@ -72,7 +71,7 @@ export const TipsterSignup = () => {
     email: data.email?.trim().toLowerCase(),
     password: data.password,
     birthDate: data.birthDate,
-    bio: data.bio?.trim(),
+    bio: "",
     avatarUrl: "/register-tipster", // dummy value as requested
   });
 
@@ -149,7 +148,7 @@ export const TipsterSignup = () => {
       <Loading visible={isLoading} />
       <div className="tipster-signup-shell px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-2 lg:items-stretch">
-          <section className="tipster-signup-hero flex h-full flex-col overflow-hidden rounded-[2rem] p-8 text-white shadow-2xl sm:p-10">
+          <section className="order-2 tipster-signup-hero flex h-full flex-col overflow-hidden rounded-[2rem] p-6 text-white shadow-2xl sm:p-8 lg:order-1 lg:p-10">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium backdrop-blur">
               <Sparkles size={16} />
               Comunidad Picka2
@@ -192,13 +191,13 @@ export const TipsterSignup = () => {
                 </li>
                 <li className="flex items-start gap-3">
                   <Sparkles size={18} className="mt-0.5 shrink-0" />
-                  Una biografía breve para contar tu enfoque y estilo.
+                  Tus básicos para abrir la cuenta; la bio la completas después en tu perfil.
                 </li>
               </ul>
             </div>
           </section>
 
-          <section className="flex h-full flex-col rounded-[2rem] border border-slate-200/70 bg-white/90 p-6 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8 lg:p-10">
+          <section className="order-1 flex h-full flex-col rounded-[2rem] border border-slate-200/70 bg-white/90 p-5 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.45)] backdrop-blur sm:p-8 lg:order-2 lg:p-10">
             <div className="mb-8">
               <p className="text-sm font-semibold uppercase tracking-[0.22em] text-primaryBlue/70">
                 Registro de tipster
@@ -207,7 +206,7 @@ export const TipsterSignup = () => {
                 Completa tu perfil
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-500">
-                Cuida estos detalles porque serán la base de cómo te verán dentro de Picka2.
+                Crea tu cuenta con lo esencial y termina de personalizar tu perfil en el siguiente paso.
               </p>
             </div>
 
@@ -317,26 +316,6 @@ export const TipsterSignup = () => {
                       "Las contraseñas no coinciden",
                   }}
                 />
-                <div className="md:col-span-2">
-                  <RegisterInput<Inputs>
-                    name="bio"
-                    label="Biografía"
-                    register={register}
-                    fieldError={errors.bio}
-                    type="textarea"
-                    required
-                    validation={{
-                      minLength: {
-                        value: 10,
-                        message: "Debe tener al menos 10 caracteres",
-                      },
-                      maxLength: {
-                        value: 500,
-                        message: "No puede exceder 500 caracteres",
-                      },
-                    }}
-                  />
-                </div>
               </div>
 
               <div className="mt-auto flex flex-col gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:items-center sm:justify-between">
