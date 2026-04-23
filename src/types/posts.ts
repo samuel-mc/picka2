@@ -9,6 +9,7 @@ export interface Sportsbook {
   id: number;
   name: string;
   baseUrl: string | null;
+  logoUrl: string | null;
   active: boolean;
   createdAt: string;
 }

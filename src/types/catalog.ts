@@ -36,3 +36,11 @@ export interface TeamItem {
   countryId: number;
   countryName: string;
 }
+
+export interface SportsbookCatalogItem {
+  id: number;
+  name: string;
+  active: boolean;
+  baseUrl: string | null;
+  logoUrl: string | null;
+}

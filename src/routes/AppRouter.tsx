@@ -19,6 +19,7 @@ import { CountriesCatalogPage } from '@/pages/admin/catalogs/CountriesCatalog';
 import { CompetitionsCatalogPage } from '@/pages/admin/catalogs/CompetitionsCatalog';
 import { TeamsCatalogPage } from '@/pages/admin/catalogs/TeamsCatalog';
 import { HomePrashesCatalogPage } from '@/pages/admin/catalogs/HomePrashesCatalog';
+import { SportsbooksCatalogPage } from '@/pages/admin/catalogs/SportsbooksCatalog';
 import PostsFeedPage from '@/pages/tipster/PostsFeed';
 import CreatePostPage from '@/pages/tipster/CreatePost';
 import SavedPostsPage from '@/pages/tipster/SavedPosts';
@@ -57,6 +58,7 @@ export default function AppRouter() {
           <Route path="/admin/catalogos/competiciones" element={<CompetitionsCatalogPage />} />
           <Route path="/admin/catalogos/equipos" element={<TeamsCatalogPage />} />
           <Route path="/admin/catalogos/home-prashes" element={<HomePrashesCatalogPage />} />
+          <Route path="/admin/catalogos/sportsbooks" element={<SportsbooksCatalogPage />} />
         </Route>
 
         {/* Módulos solo para tipsters (Ejemplo) */}

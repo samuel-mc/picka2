@@ -3,6 +3,7 @@ import { UserSidebar } from "../../components/user/UserSidebar";
 import type { LinkModel } from "../../models/LinkModel";
 import {
   BarChart3,
+  Building2,
   Flag,
   MessageSquareQuote,
   MapPinned,
@@ -60,6 +61,12 @@ export const UserLayout: React.FC<UserLayoutProps> = ({ children }) => {
       name: "Home Prashes",
       link: "/admin/catalogos/home-prashes",
       icon: MessageSquareQuote,
+    },
+    {
+      id: 8,
+      name: "Sportsbooks",
+      link: "/admin/catalogos/sportsbooks",
+      icon: Building2,
     },
     // {
     //   id: 7,

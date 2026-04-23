@@ -282,6 +282,16 @@ export const UserDashboard = () => {
               Textos principales del hero que se muestra en el feed de tipsters.
             </p>
           </Link>
+
+          <Link
+            to="/admin/catalogos/sportsbooks"
+            className="rounded-xl border border-slate-200 bg-slate-50 p-5 transition hover:border-primaryBlue hover:bg-white"
+          >
+            <h2 className="text-lg font-semibold text-slate-900">Sportsbooks</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Casas de apuesta disponibles al crear posts.
+            </p>
+          </Link>
         </div>
       </div>
     </UserLayout>

@@ -159,6 +159,26 @@ export function PostCard({
   const isFollowingAuthor = Boolean(post.author.followedByCurrentUser);
   const isFollowLoading = followLoadingForAuthorId === post.author.id;
 
+  const pickSport = post.simplePick
+    ? post.simplePick.sport
+    : post.parley
+      ? post.parleySelections.length > 1
+        ? "Multi deporte"
+        : post.parleySelections[0]?.sport ?? "N/A"
+      : null;
+
+  const pickLeague = post.simplePick
+    ? post.simplePick.league
+    : post.parley
+      ? post.parleySelections.length > 1
+        ? `${post.parleySelections.length} selecciones`
+        : post.parleySelections[0]?.league ?? "N/A"
+      : null;
+
+  const pickStatus: ResultStatus | null = (post.simplePick?.resultStatus ??
+    post.parley?.resultStatus ??
+    null) as ResultStatus | null;
+
   const handleOpenDetail = () => {
     if (!onOpenDetail) return;
     onOpenDetail(post.id);
@@ -293,6 +313,56 @@ export function PostCard({
           )}
         </header>
 
+        {(post.simplePick || post.parley) && pickSport && pickLeague && pickStatus && (
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="min-w-0 truncate text-sm font-semibold text-slate-700">
+              {pickSport} <span className="text-slate-400">{" > "}</span> {pickLeague}
+            </p>
+
+            {!readOnly && isOwner ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  className={`inline-flex min-h-9 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${getResultStatusClasses(
+                    pickStatus
+                  )}`}
+                >
+                  {getResultStatusLabel(pickStatus)}
+                  <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={8}
+                  className="w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+                >
+                  {(["PENDING", "WON", "LOST", "VOID"] as ResultStatus[]).map((status) => (
+                    <DropdownMenuItem
+                      key={status}
+                      onClick={() => void onUpdatePickStatus(post.id, status)}
+                      className="rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
+                    >
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
+                          status
+                        )}`}
+                      >
+                        {getResultStatusLabel(status)}
+                      </span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <span
+                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
+                  pickStatus
+                )}`}
+              >
+                {getResultStatusLabel(pickStatus)}
+              </span>
+            )}
+          </div>
+        )}
+
         <div
           className={`mt-4 space-y-4 sm:mt-5 ${canOpenDetail ? "cursor-pointer" : ""}`}
           onClick={handleOpenDetail}
@@ -369,80 +439,21 @@ export function PostCard({
                 <h4 className="font-semibold text-slate-900">
                   {post.type === "PARLEY" ? "Ticket del parley" : "Detalle del pick"}
                 </h4>
-                {!readOnly && isOwner && (post.simplePick || post.parley) ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      onClick={(event) => event.stopPropagation()}
-                      className={`ml-auto inline-flex min-h-9 cursor-pointer items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ring-1 transition ${getResultStatusClasses(
-                        post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
-                      )}`}
-                    >
-                      {getResultStatusLabel(
-                        post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
-                      )}
-                      <ChevronDown className="h-3.5 w-3.5 opacity-80" />
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      sideOffset={8}
-                      className="w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
-                      onClick={(event) => event.stopPropagation()}
-                    >
-                      {(["PENDING", "WON", "LOST", "VOID"] as ResultStatus[]).map((status) => (
-                        <DropdownMenuItem
-                          key={status}
-                          onClick={() => void onUpdatePickStatus(post.id, status)}
-                          className="rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
-                        >
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
-                              status
-                            )}`}
-                          >
-                            {getResultStatusLabel(status)}
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <span
-                    className={`ml-auto rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ${getResultStatusClasses(
-                      post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
-                    )}`}
-                  >
-                    {getResultStatusLabel(
-                      post.simplePick?.resultStatus ?? post.parley?.resultStatus ?? "PENDING"
-                    )}
-                  </span>
-                )}
               </div>
 
               {post.simplePick && (
                 <PickSummary
-                  sport={post.simplePick.sport}
-                  league={post.simplePick.league}
                   stake={post.simplePick.stake}
                   eventDate={post.simplePick.eventDate}
-                  sportsbook={post.simplePick.sportsbook?.name ?? null}
+                  sportsbook={post.simplePick.sportsbook ?? null}
                 />
               )}
 
               {post.parley && (
                 <PickSummary
-                  sport={
-                    post.parleySelections.length > 1
-                      ? "Multi deporte"
-                      : post.parleySelections[0]?.sport ?? "N/A"
-                  }
-                  league={
-                    post.parleySelections.length > 1
-                      ? `${post.parleySelections.length} selecciones`
-                      : post.parleySelections[0]?.league ?? "N/A"
-                  }
                   stake={post.parley.stake}
                   eventDate={post.parley.eventDate}
-                  sportsbook={post.parley.sportsbook?.name ?? null}
+                  sportsbook={post.parley.sportsbook ?? null}
                 />
               )}
 
@@ -815,29 +826,68 @@ function ActionButton({
 }
 
 function PickSummary({
-  sport,
-  league,
   stake,
   eventDate,
   sportsbook,
 }: {
-  sport: string;
-  league: string;
   stake: number | null;
   eventDate: string | null;
-  sportsbook: string | null;
+  sportsbook: { name: string; baseUrl: string | null; logoUrl: string | null } | null;
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-      <StatChip label="Deporte" value={sport} />
-      <StatChip label="Liga" value={league} />
-      <StatChip label="Stake" value={stake != null ? String(stake) : "N/A"} />
-      <StatChip label="Casa" value={sportsbook ?? "N/A"} />
-      <div className="rounded-3xl bg-white p-3 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Fecha</p>
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <span className="text-sm text-slate-600">{formatDate(eventDate)}</span>
-        </div>
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <StatChip label="Stake" value={stake != null ? String(stake) : "N/A"} />
+        <StatChip label="Fecha" value={formatDate(eventDate)} />
+      </div>
+
+      <div className="flex justify-end">
+        {sportsbook?.logoUrl ? (
+          sportsbook.baseUrl ? (
+            <a
+              href={sportsbook.baseUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(event) => event.stopPropagation()}
+              className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:border-[#0f4c81]/35"
+              aria-label={`Abrir ${sportsbook.name}`}
+            >
+              <img
+                src={sportsbook.logoUrl}
+                alt={sportsbook.name}
+                className="h-full w-full object-contain"
+              />
+            </a>
+          ) : (
+            <div className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <img
+                src={sportsbook.logoUrl}
+                alt={sportsbook.name}
+                className="h-full w-full object-contain"
+              />
+            </div>
+          )
+        ) : sportsbook?.name ? (
+          sportsbook.baseUrl ? (
+            <a
+              href={sportsbook.baseUrl}
+              target="_blank"
+              rel="noreferrer"
+              onClick={(event) => event.stopPropagation()}
+              className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-xs font-semibold text-[#0f4c81] ring-1 ring-slate-200 transition hover:ring-[#0f4c81]/35"
+            >
+              {sportsbook.name}
+            </a>
+          ) : (
+            <span className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">
+              {sportsbook.name}
+            </span>
+          )
+        ) : (
+          <span className="inline-flex min-h-11 items-center rounded-full bg-white px-4 py-2 text-xs font-semibold text-slate-400 ring-1 ring-slate-200">
+            Sin sportsbook
+          </span>
+        )}
       </div>
     </div>
   );
