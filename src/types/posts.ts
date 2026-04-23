@@ -107,6 +107,11 @@ export interface PagedResponse<T> {
   hasNext: boolean;
 }
 
+export interface FollowingFeedResponse {
+  feed: PagedResponse<PostItem>;
+  followingCount: number;
+}
+
 export interface PostPickRequest {
   sportId: number;
   leagueId: number;

@@ -12,6 +12,7 @@ import type { ApiResponse, CatalogItem, CompetitionItem } from "@/types/catalog"
 import type {
   CommentItem,
   CreatePostPayload,
+  FollowingFeedResponse,
   PagedResponse,
   PostItem,
   PostMetrics,
@@ -31,6 +32,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const role = useAuthStore((state) => state.role);
   const canCreatePosts = role === "ROLE_TIPSTER";
   const isSavedMode = mode === "saved";
+  const [feedTab, setFeedTab] = useState<"following" | "discover">("discover");
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [sports, setSports] = useState<CatalogItem[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([]);
@@ -48,6 +50,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const [showFloatingComposerButton, setShowFloatingComposerButton] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [followLoadingAuthorId, setFollowLoadingAuthorId] = useState<number | null>(null);
+  const [followingCount, setFollowingCount] = useState<number | null>(null);
 
   const applyFeedResponse = useCallback(
     (response: PagedResponse<PostItem>, append = false) => {
@@ -71,11 +74,23 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
           ? "/posts/saved"
           : authorId != null
             ? `/posts/users/${authorId}`
-            : "/posts/feed";
-        const { data } = await api.get<ApiResponse<PagedResponse<PostItem>>>(endpoint, {
-          params: { page: nextPage, size: 10 },
-        });
-        applyFeedResponse(data.data, append);
+            : feedTab === "following"
+              ? "/posts/feed/following"
+              : "/posts/feed/discover";
+
+        if (endpoint === "/posts/feed/following") {
+          const { data } = await api.get<ApiResponse<FollowingFeedResponse>>(endpoint, {
+            params: { page: nextPage, size: 10 },
+          });
+          setFollowingCount(data.data.followingCount);
+          applyFeedResponse(data.data.feed, append);
+        } else {
+          const { data } = await api.get<ApiResponse<PagedResponse<PostItem>>>(endpoint, {
+            params: { page: nextPage, size: 10 },
+          });
+          setFollowingCount(null);
+          applyFeedResponse(data.data, append);
+        }
       } catch {
         toast.error(isSavedMode ? "No se pudieron cargar los posts guardados." : "No se pudo cargar el feed.");
       } finally {
@@ -83,7 +98,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
         setLoadingMore(false);
       }
     },
-    [api, applyFeedResponse, authorFilter, isSavedMode]
+    [api, applyFeedResponse, authorFilter, feedTab, isSavedMode]
   );
 
   useEffect(() => {
@@ -124,7 +139,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
 
   useEffect(() => {
     void loadFeed(0, false, authorFilter);
-  }, [authorFilter, loadFeed]);
+  }, [authorFilter, feedTab, loadFeed]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -430,16 +445,33 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   }, [canCreatePosts, isMobileViewport, navigate]);
 
   const showAuthorFilter = !isSavedMode && authorFilter != null;
-  const title = showAuthorFilter ? `Viendo posts del autor #${authorFilter}` : isSavedMode ? "Posts guardados" : "Feed general";
+  const showTabs = !isSavedMode && authorFilter == null;
+
+  const title = showAuthorFilter
+    ? `Viendo posts del autor #${authorFilter}`
+    : isSavedMode
+      ? "Posts guardados"
+      : feedTab === "following"
+        ? "Siguiendo"
+        : "Descubrir";
+
   const description = showAuthorFilter
     ? "Puedes volver al feed principal cuando quieras."
     : isSavedMode
       ? "Consulta y administra las publicaciones que guardaste."
-      : "Timeline listo para analisis, picks simples y parleys.";
+      : feedTab === "following"
+        ? "Publicaciones de los tipsters que sigues."
+        : "Publicaciones destacadas de los últimos días.";
   const loadingMessage = isSavedMode ? "Cargando posts guardados..." : "Cargando feed...";
   const emptyMessage = isSavedMode
     ? "Todavia no has guardado publicaciones."
-    : "Todavia no hay publicaciones para este filtro.";
+    : showAuthorFilter
+      ? "Todavia no hay publicaciones para este filtro."
+      : feedTab === "following"
+        ? followingCount === 0
+          ? "Aún no sigues a ningún tipster.\nExplora publicaciones en Descubrir y comienza a seguir usuarios para personalizar tu feed."
+          : "Todavía no hay publicaciones de los usuarios que sigues."
+        : "Aún no hay publicaciones destacadas para mostrar.";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(237,95,47,0.22),_transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
@@ -490,13 +522,46 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
             </div>
           </div>
 
+          {showTabs && (
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-full bg-white/80 p-1 ring-1 ring-white/70 shadow-[0_10px_30px_rgba(15,76,129,0.06)] backdrop-blur">
+                <button
+                  type="button"
+                  onClick={() => setFeedTab("following")}
+                  className={
+                    feedTab === "following"
+                      ? "rounded-full bg-[#0f4c81] px-5 py-2 text-sm font-semibold text-white shadow-sm"
+                      : "rounded-full px-5 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
+                  }
+                >
+                  Siguiendo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedTab("discover")}
+                  className={
+                    feedTab === "discover"
+                      ? "rounded-full bg-[#0f4c81] px-5 py-2 text-sm font-semibold text-white shadow-sm"
+                      : "rounded-full px-5 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
+                  }
+                >
+                  Descubrir
+                </button>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
               {loadingMessage}
             </div>
           ) : posts.length === 0 ? (
             <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
-              {emptyMessage}
+              <div className="space-y-2">
+                {emptyMessage.split("\n").map((line, index) => (
+                  <p key={`${index}-${line}`}>{line}</p>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="space-y-6">
