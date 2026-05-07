@@ -364,6 +364,10 @@ export function PersonalizeFeedDialog({
                   </div>
                 )}
 
+                <div className="rounded-3xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+                  Progreso: <strong>{followedCount}/3</strong> tipsters seguidos para activar tu feed “Para ti”.
+                </div>
+
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <button
                     type="button"
@@ -374,8 +378,9 @@ export function PersonalizeFeedDialog({
                   </button>
                   <button
                     type="button"
+                    disabled={followedCount < 3}
                     onClick={finish}
-                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0f4c81] px-5 py-3 text-sm font-semibold text-white"
+                    className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#0f4c81] px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                   >
                     Terminar
                   </button>
