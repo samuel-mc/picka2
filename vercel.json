@@ -1,5 +1,27 @@
 {
   "rewrites": [
+    {
+      "source": "/posts/:postId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|facebot|twitterbot|discordbot|slackbot|telegrambot|whatsapp|linkedinbot|embedly|pinterest|googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/og/post/:postId"
+    },
+    {
+      "source": "/perfil/:userId",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(facebookexternalhit|facebot|twitterbot|discordbot|slackbot|telegrambot|whatsapp|linkedinbot|embedly|pinterest|googlebot|bingbot).*"
+        }
+      ],
+      "destination": "/api/og/user/:userId"
+    },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "git": {
