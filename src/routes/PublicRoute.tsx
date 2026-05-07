@@ -1,6 +1,7 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { getDefaultAppPath } from '@/lib/auth';
 import { useAuthStore } from '@/stores/authStore';
+import { AppBootSkeleton } from '@/components/common/AppBootSkeleton';
 
 export const PublicRoute = () => {
   const initialized = useAuthStore((state) => state.initialized);
@@ -8,7 +9,7 @@ export const PublicRoute = () => {
   const role = useAuthStore((state) => state.role);
 
   if (!initialized) {
-    return null;
+    return <AppBootSkeleton />;
   }
 
   if (authenticated) {

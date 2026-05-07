@@ -6,7 +6,7 @@ import { useApi } from "@/hooks/useApi";
 import { getAuthUserId } from "@/lib/auth";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { PostCard } from "@/components/posts/PostCard";
-import { sharePostLink } from "@/components/posts/post-utils";
+import { composePostSharePayload, shareContent } from "@/components/posts/post-utils";
 import { useAuthStore } from "@/stores/authStore";
 import type { ApiResponse, CatalogItem, CompetitionItem } from "@/types/catalog";
 import type {
@@ -315,7 +315,8 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const handleShare = useCallback(
     async (post: PostItem) => {
       try {
-        const shareResult = await sharePostLink(post.id);
+        const sharePayload = composePostSharePayload(post, "short");
+        const shareResult = await shareContent(sharePayload);
         if (!shareResult.completed) {
           return null;
         }
@@ -474,7 +475,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
         : "Aún no hay publicaciones destacadas para mostrar.";
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(237,95,47,0.22),_transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(237,95,47,0.22),transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <section className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-white/70 bg-white/80 px-5 py-4 shadow-[0_14px_40px_rgba(15,76,129,0.08)] backdrop-blur">

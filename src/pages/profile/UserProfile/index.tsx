@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
-import { ArrowLeft, BadgeCheck, UserPlus, UserMinus } from "lucide-react";
+import { ArrowLeft, BadgeCheck, Share2, UserPlus, UserMinus } from "lucide-react";
 import { TipsterLayout } from "@/layouts/TipsterLayout";
 import { useApi } from "@/hooks/useApi";
 import { getAuthUserId } from "@/lib/auth";
 import { PostCard } from "@/components/posts/PostCard";
-import { sharePostLink } from "@/components/posts/post-utils";
+import { composePostSharePayload, composeTipsterSharePayload, shareContent } from "@/components/posts/post-utils";
+import { useAuthStore } from "@/stores/authStore";
 import type { ApiResponse, CompetitionItem, TeamItem } from "@/types/catalog";
 import type {
   CommentItem,
@@ -38,6 +39,8 @@ export default function UserProfilePage() {
   const api = useApi();
   const navigate = useNavigate();
   const currentUserId = useMemo(() => getAuthUserId(), []);
+  const initialized = useAuthStore((state) => state.initialized);
+  const authenticated = useAuthStore((state) => state.authenticated);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,7 +53,10 @@ export default function UserProfilePage() {
     setProfile(data);
   }, [api, targetUserId]);
 
+  const isPublicMode = initialized && !authenticated;
+
   useEffect(() => {
+    if (!initialized) return;
     if (!Number.isFinite(targetUserId)) {
       navigate("/feed");
       return;
@@ -61,12 +67,31 @@ export default function UserProfilePage() {
 
     (async () => {
       try {
-        const [profileResponse, postsResponse] = await Promise.all([
-          api.get<PublicProfile>(`/users/${targetUserId}/profile`),
-          api.get<ApiResponse<PagedResponse<PostItem>>>(`/posts/users/${targetUserId}`, {
-            params: { page: 0, size: 20 },
-          }),
-        ]);
+        const [profileResponse, postsResponse] = authenticated
+          ? await Promise.all([
+              api.get<PublicProfile>(`/users/${targetUserId}/profile`),
+              api.get<ApiResponse<PagedResponse<PostItem>>>(`/posts/users/${targetUserId}`, {
+                params: { page: 0, size: 20 },
+              }),
+            ])
+          : await Promise.all([
+              fetch(`${import.meta.env.VITE_API_URL}/users/public/${targetUserId}/profile`, {
+                credentials: "include",
+              }).then(async (res) => {
+                if (!res.ok) throw new Error("No se pudo cargar el perfil público.");
+                return { data: (await res.json()) as PublicProfile };
+              }),
+              fetch(
+                new URL(
+                  `/posts/public/users/${targetUserId}?page=0&size=20`,
+                  import.meta.env.VITE_API_URL
+                ).toString(),
+                { credentials: "include" }
+              ).then(async (res) => {
+                if (!res.ok) throw new Error("No se pudieron cargar los posts públicos.");
+                return { data: (await res.json()) as ApiResponse<PagedResponse<PostItem>> };
+              }),
+            ]);
 
         if (!cancelled) {
           setProfile(profileResponse.data);
@@ -87,7 +112,7 @@ export default function UserProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [api, navigate, targetUserId]);
+  }, [api, authenticated, initialized, navigate, targetUserId]);
 
   const updatePost = useCallback((postId: number, updater: (current: PostItem) => PostItem) => {
     setPosts((current) => current.map((post) => (post.id === postId ? updater(post) : post)));
@@ -173,7 +198,8 @@ export default function UserProfilePage() {
   const handleShare = useCallback(
     async (post: PostItem) => {
       try {
-        const shareResult = await sharePostLink(post.id);
+        const sharePayload = composePostSharePayload(post, "short");
+        const shareResult = await shareContent(sharePayload);
         if (!shareResult.completed) {
           return null;
         }
@@ -193,6 +219,34 @@ export default function UserProfilePage() {
     },
     [api, updatePost]
   );
+
+  const handleShareProfile = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const fullName = `${profile.name} ${profile.lastname}`.trim();
+      const competitions = profile.preferredCompetitions.map((c) => c.name).slice(0, 2);
+      const teams = profile.preferredTeams.map((t) => t.name).slice(0, 2);
+      const hookParts = [
+        competitions.length > 0 ? competitions.join(" · ") : null,
+        teams.length > 0 ? teams.join(" · ") : null,
+      ].filter(Boolean);
+      const tipsterHook = hookParts.length > 0 ? hookParts.join(" | ") : `@${profile.username}`;
+
+      const payload = composeTipsterSharePayload({
+        userId: profile.id,
+        tipsterName: fullName,
+        tipsterHook,
+        optionalStatsLine: null,
+        variant: "short",
+      });
+
+      const shareResult = await shareContent(payload);
+      if (!shareResult.completed) return;
+      toast.success(shareResult.copied ? "Enlace copiado al portapapeles." : "Enlace listo para compartir.");
+    } catch {
+      toast.error("No se pudo compartir el perfil.");
+    }
+  }, [profile]);
 
   const handleLoadComments = useCallback(
     async (postId: number) => {
@@ -253,6 +307,11 @@ export default function UserProfilePage() {
 
   const handleToggleFollow = useCallback(async () => {
     if (!profile || profile.selfProfile) return;
+    if (!authenticated) {
+      toast.error("Inicia sesión para seguir tipsters.");
+      navigate("/login");
+      return;
+    }
     setFollowLoading(true);
     try {
       if (profile.followedByCurrentUser) {
@@ -267,12 +326,12 @@ export default function UserProfilePage() {
     } finally {
       setFollowLoading(false);
     }
-  }, [api, loadProfile, profile]);
+  }, [api, authenticated, loadProfile, navigate, profile]);
 
   if (loading || !profile) {
     return (
       <TipsterLayout isFixed={false}>
-        <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(237,95,47,0.22),_transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
+        <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(237,95,47,0.22),transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-5xl rounded-[2rem] border border-dashed border-slate-300 bg-white/70 p-12 text-center text-slate-500">
             Cargando perfil...
           </div>
@@ -290,7 +349,7 @@ export default function UserProfilePage() {
 
   return (
     <TipsterLayout isFixed={false}>
-      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(237,95,47,0.22),_transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-8 sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(237,95,47,0.22),transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <button
@@ -302,36 +361,56 @@ export default function UserProfilePage() {
               Volver al feed
             </button>
 
-            {profile.selfProfile ? (
-              <Link
-                to="/perfil/editar"
-                className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-4 py-2 text-sm font-semibold text-white"
-              >
-                Editar perfil
-              </Link>
-            ) : (
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                disabled={followLoading}
-                onClick={() => void handleToggleFollow()}
-                className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                  profile.followedByCurrentUser
-                    ? "border border-slate-200 bg-white text-slate-700"
-                    : "bg-[#ed5f2f] text-white"
-                }`}
+                onClick={() => void handleShareProfile()}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-white"
               >
-                {profile.followedByCurrentUser ? (
-                  <UserMinus className="h-4 w-4" />
-                ) : (
-                  <UserPlus className="h-4 w-4" />
-                )}
-                {followLoading
-                  ? "Actualizando..."
-                  : profile.followedByCurrentUser
-                    ? "Siguiendo"
-                    : "Seguir"}
+                <Share2 className="h-4 w-4" />
+                Compartir perfil
               </button>
-            )}
+
+              {isPublicMode && (
+                <Link
+                  to="/login"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Iniciar sesión
+                </Link>
+              )}
+
+              {profile.selfProfile ? (
+                <Link
+                  to="/perfil/editar"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Editar perfil
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled={followLoading}
+                  onClick={() => void handleToggleFollow()}
+                  className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                    profile.followedByCurrentUser
+                      ? "border border-slate-200 bg-white text-slate-700"
+                      : "bg-[#ed5f2f] text-white"
+                  }`}
+                >
+                  {profile.followedByCurrentUser ? (
+                    <UserMinus className="h-4 w-4" />
+                  ) : (
+                    <UserPlus className="h-4 w-4" />
+                  )}
+                  {followLoading
+                    ? "Actualizando..."
+                    : profile.followedByCurrentUser
+                      ? "Siguiendo"
+                      : "Seguir"}
+                </button>
+              )}
+            </div>
           </div>
 
           <section className="rounded-[2rem] border border-white/70 bg-white/90 p-6 shadow-[0_24px_80px_rgba(13,38,76,0.12)]">
@@ -415,6 +494,8 @@ export default function UserProfilePage() {
                     onUpdatePickStatus={handleUpdatePickStatus}
                     onRegisterView={handleRegisterView}
                     onOpenDetail={(postId) => navigate(`/posts/${postId}`)}
+                    registerViewOnMount={!isPublicMode}
+                    readOnly={isPublicMode}
                   />
                 ))}
               </div>

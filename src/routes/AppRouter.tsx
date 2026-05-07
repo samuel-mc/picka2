@@ -33,6 +33,7 @@ export default function AppRouter() {
       <AuthSessionManager />
       <Routes>
         <Route path="/posts/:postId" element={<PostDetailPage />} />
+        <Route path="/perfil/:userId" element={<UserProfilePage />} />
 
         {/* Rutas Públicas (solo accesibles si NO estás logeado) */}
         <Route element={<PublicRoute />}>
@@ -68,7 +69,6 @@ export default function AppRouter() {
           <Route path="/guardados" element={<SavedPostsPage />} />
           <Route path="/perfil" element={<UserProfilePage />} />
           <Route path="/perfil/editar" element={<MiPerfilPage />} />
-          <Route path="/perfil/:userId" element={<UserProfilePage />} />
           <Route path="/tipster/perfil" element={<UserProfilePage />} />
           <Route path="/tipster/perfil/editar" element={<MiPerfilPage />} />
           <Route path="/tipster/perfil/:userId" element={<UserProfilePage />} />

@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/authStore';
+import { AppBootSkeleton } from '@/components/common/AppBootSkeleton';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -12,7 +13,7 @@ export const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
   const userRole = useAuthStore((state) => state.role);
 
   if (!initialized) {
-    return null;
+    return <AppBootSkeleton />;
   }
 
   if (!authenticated) {
