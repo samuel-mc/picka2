@@ -6,6 +6,7 @@ import { useApi } from "@/hooks/useApi";
 import { getAuthUserId } from "@/lib/auth";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { PostCard } from "@/components/posts/PostCard";
+import { PersonalizeFeedDialog } from "@/components/onboarding/PersonalizeFeedDialog";
 import { composePostSharePayload, shareContent } from "@/components/posts/post-utils";
 import { useAuthStore } from "@/stores/authStore";
 import type { ApiResponse, CatalogItem, CompetitionItem } from "@/types/catalog";
@@ -34,6 +35,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const isSavedMode = mode === "saved";
   const [feedTab, setFeedTab] = useState<"following" | "forYou">("forYou");
   const [needsPersonalization, setNeedsPersonalization] = useState(false);
+  const [showPersonalizeDialog, setShowPersonalizeDialog] = useState(false);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [sports, setSports] = useState<CatalogItem[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([]);
@@ -117,6 +119,8 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
           (data.preferredCompetitions?.length ?? 0) > 0 || (data.preferredTeams?.length ?? 0) > 0;
         if (!cancelled) {
           setNeedsPersonalization(!hasPrefs);
+          const dismissed = window.localStorage.getItem("picka2_onboarding_done") === "1";
+          setShowPersonalizeDialog(!hasPrefs && !dismissed);
         }
       } catch {
         if (!cancelled) {
@@ -505,6 +509,18 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(237,95,47,0.22),transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
+      {!isSavedMode && (
+        <PersonalizeFeedDialog
+          open={showPersonalizeDialog}
+          api={api}
+          onOpenChange={setShowPersonalizeDialog}
+          onCompleted={() => {
+            window.localStorage.setItem("picka2_onboarding_done", "1");
+            setNeedsPersonalization(false);
+            void loadFeed(0, false, authorFilter);
+          }}
+        />
+      )}
       <div className="mx-auto max-w-4xl space-y-6">
         <section className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-white/70 bg-white/80 px-5 py-4 shadow-[0_14px_40px_rgba(15,76,129,0.08)] backdrop-blur">
