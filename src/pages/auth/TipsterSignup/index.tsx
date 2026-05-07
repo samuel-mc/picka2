@@ -43,12 +43,16 @@ export const TipsterSignup = () => {
   const navigate = useNavigate();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [birthDay, setBirthDay] = useState("");
+  const [birthMonth, setBirthMonth] = useState("");
+  const [birthYear, setBirthYear] = useState("");
 
   const {
     register,
     handleSubmit,
     getValues,
     setError,
+    setValue,
     trigger,
     watch,
     formState: { errors, isValid },
@@ -59,6 +63,39 @@ export const TipsterSignup = () => {
 
   const passwordValue = watch("password");
   const maxBirthDate = getAdultBirthDateLimit();
+
+  const minBirthYear = 1900;
+  const maxBirthYear = new Date().getFullYear() - 18;
+
+  const daysInSelectedMonth = useMemo(() => {
+    const year = Number(birthYear);
+    const month = Number(birthMonth);
+    if (!year || !month) return 31;
+    return new Date(year, month, 0).getDate();
+  }, [birthMonth, birthYear]);
+
+  useEffect(() => {
+    // Ensure day stays valid when month/year changes
+    const day = Number(birthDay);
+    if (!day) return;
+    if (day > daysInSelectedMonth) {
+      setBirthDay(String(daysInSelectedMonth));
+    }
+  }, [birthDay, daysInSelectedMonth]);
+
+  useEffect(() => {
+    const day = Number(birthDay);
+    const month = Number(birthMonth);
+    const year = Number(birthYear);
+
+    if (!day || !month || !year) {
+      setValue("birthDate", "", { shouldValidate: true, shouldDirty: true });
+      return;
+    }
+
+    const birthDateIso = `${String(year)}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    setValue("birthDate", birthDateIso, { shouldValidate: true, shouldDirty: true });
+  }, [birthDay, birthMonth, birthYear, setValue]);
 
   useEffect(() => {
     void trigger("passwordConfirm");
@@ -73,6 +110,7 @@ export const TipsterSignup = () => {
     birthDate: data.birthDate,
     bio: "",
     avatarUrl: "/register-tipster", // dummy value as requested
+    referralCode: window.localStorage.getItem("picka2_referral_code") || undefined,
   });
 
   const api = useMemo(
@@ -124,6 +162,7 @@ export const TipsterSignup = () => {
 
       const payload = formatFormData(data);
       await api.post("/auth/register-tipster", payload);
+      window.localStorage.removeItem("picka2_referral_code");
       toast.success("Tipster creado correctamente", { duration: 5000 });
       navigate("/login", { replace: true });
     } catch (error: unknown) {
@@ -282,18 +321,91 @@ export const TipsterSignup = () => {
                     },
                   }}
                 />
-                <RegisterInput<Inputs>
-                  name="birthDate"
-                  label="Fecha de nacimiento"
-                  register={register}
-                  fieldError={errors.birthDate}
-                  type="date"
-                  required
-                  validation={{
-                    validate: (value) =>
-                      value <= maxBirthDate || "Debes ser mayor de 18 años para registrarte como tipster",
-                  }}
-                />
+                <div className="mb-5">
+                  <label className="block mb-1" htmlFor="birthDay">
+                    Fecha de nacimiento
+                  </label>
+
+                  <input
+                    type="hidden"
+                    {...register("birthDate", {
+                      required: true,
+                      validate: (value) =>
+                        value <= maxBirthDate || "Debes ser mayor de 18 años para registrarte como tipster",
+                    })}
+                  />
+
+                  <div className="grid grid-cols-3 gap-3">
+                    <select
+                      id="birthDay"
+                      className="w-full bg-white placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
+                      value={birthDay}
+                      onChange={(e) => setBirthDay(e.target.value)}
+                      required
+                    >
+                      <option value="">DD</option>
+                      {Array.from({ length: daysInSelectedMonth }, (_, i) => i + 1).map((day) => (
+                        <option key={day} value={String(day)}>
+                          {String(day).padStart(2, "0")}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      id="birthMonth"
+                      className="w-full bg-white placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
+                      value={birthMonth}
+                      onChange={(e) => setBirthMonth(e.target.value)}
+                      required
+                    >
+                      <option value="">MM</option>
+                      {[
+                        "Enero",
+                        "Febrero",
+                        "Marzo",
+                        "Abril",
+                        "Mayo",
+                        "Junio",
+                        "Julio",
+                        "Agosto",
+                        "Septiembre",
+                        "Octubre",
+                        "Noviembre",
+                        "Diciembre",
+                      ].map((monthName, index) => {
+                        const monthNumber = index + 1;
+                        return (
+                          <option key={monthNumber} value={String(monthNumber)}>
+                            {monthName}
+                          </option>
+                        );
+                      })}
+                    </select>
+
+                    <select
+                      id="birthYear"
+                      className="w-full bg-white placeholder:text-slate-400 text-slate-700 text-sm border border-slate-200 rounded-md px-3 py-2 transition duration-300 ease focus:outline-none focus:border-slate-400 hover:border-slate-300 shadow-sm focus:shadow"
+                      value={birthYear}
+                      onChange={(e) => setBirthYear(e.target.value)}
+                      required
+                    >
+                      <option value="">YYYY</option>
+                      {Array.from({ length: maxBirthYear - minBirthYear + 1 }, (_, i) => maxBirthYear - i).map(
+                        (year) => (
+                          <option key={year} value={String(year)}>
+                            {year}
+                          </option>
+                        )
+                      )}
+                    </select>
+                  </div>
+
+                  {errors.birthDate ? (
+                    <span className="text-red-500 text-sm mt-1 block">
+                      {errors.birthDate.message || "Este campo es requerido"}
+                    </span>
+                  ) : null}
+                </div>
                 <RegisterInput<Inputs>
                   name="password"
                   label="Contraseña"

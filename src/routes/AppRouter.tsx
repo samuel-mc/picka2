@@ -26,6 +26,7 @@ import SavedPostsPage from '@/pages/tipster/SavedPosts';
 import UserProfilePage from '@/pages/profile/UserProfile';
 import { AuthSessionManager } from '@/components/auth/AuthSessionManager';
 import PostDetailPage from '@/pages/posts/PostDetail';
+import ReferralRedirectPage from '@/pages/referrals/ReferralRedirect';
 
 export default function AppRouter() {
   return (
@@ -34,6 +35,7 @@ export default function AppRouter() {
       <Routes>
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/perfil/:userId" element={<UserProfilePage />} />
+        <Route path="/r/:code" element={<ReferralRedirectPage />} />
 
         {/* Rutas Públicas (solo accesibles si NO estás logeado) */}
         <Route element={<PublicRoute />}>
