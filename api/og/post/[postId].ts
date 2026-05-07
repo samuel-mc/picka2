@@ -1,4 +1,3 @@
-import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { absoluteUrl, getEnv, isBotUserAgent, renderOgHtml } from "../../_utils/og";
 
 type ApiResponse<T> = { success?: boolean; message?: string; data: T };
@@ -16,21 +15,27 @@ function pickDescription(post: Post) {
   return base.length > 180 ? `${base.slice(0, 179).trimEnd()}…` : base;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const ua = req.headers["user-agent"] ?? null;
-  const postId = String(req.query.postId ?? "");
+export const config = {
+  runtime: "edge",
+};
 
-  const webBaseUrl = getEnv("WEB_BASE_URL", `https://${req.headers.host ?? "localhost"}`);
+export default async function handler(req: Request) {
+  const ua = req.headers.get("user-agent");
+  const url = new URL(req.url);
+  const parts = url.pathname.split("/").filter(Boolean);
+  const postId = parts[parts.length - 1] ?? "";
+
+  const webBaseUrl = getEnv("WEB_BASE_URL", `${url.protocol}//${url.host}`);
   const apiBaseUrl = getEnv("API_BASE_URL", getEnv("VITE_API_URL", "http://localhost:8080"));
 
   const canonicalUrl = absoluteUrl(webBaseUrl, `/posts/${encodeURIComponent(postId)}`);
   const fallbackOgImage = absoluteUrl(webBaseUrl, "/api/og/image/default.png");
 
-  if (!isBotUserAgent(typeof ua === "string" ? ua : null)) {
-    res.statusCode = 302;
-    res.setHeader("Location", canonicalUrl);
-    res.end();
-    return;
+  if (!isBotUserAgent(ua)) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: canonicalUrl },
+    });
   }
 
   try {
@@ -55,10 +60,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       type: "article",
     });
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=300, s-maxage=3600");
-    res.end(html);
+    return new Response(html, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=300, s-maxage=3600",
+      },
+    });
   } catch {
     const html = renderOgHtml({
       url: canonicalUrl,
@@ -68,10 +76,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       type: "article",
     });
 
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=60, s-maxage=600");
-    res.end(html);
+    return new Response(html, {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=60, s-maxage=600",
+      },
+    });
   }
 }
 
