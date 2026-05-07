@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BadgeCheck, Bell, Bookmark, ChevronDown, LogOut, Menu, UserRound, X } from 'lucide-react';
+import { BadgeCheck, Bell, Bookmark, ChevronDown, Gift, LogOut, Menu, UserRound, X } from 'lucide-react';
 import { getDefaultAppPath } from '@/lib/auth';
 import logo from "../../../assets/logo.png";
 import './styles.css';
@@ -103,6 +103,10 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
 
   const openSavedPosts = () => {
     navigate("/guardados");
+  };
+
+  const openInvite = () => {
+    navigate("/invitar");
   };
 
   const handleNotificationClick = async (notificationId: number, targetPath: string) => {
@@ -316,6 +320,15 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
                   </DropdownMenuItem>
                   {role === 'ROLE_TIPSTER' && (
                     <DropdownMenuItem
+                      onClick={openInvite}
+                      className="rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
+                    >
+                      <Gift className="h-4 w-4" />
+                      Invitar
+                    </DropdownMenuItem>
+                  )}
+                  {role === 'ROLE_TIPSTER' && (
+                    <DropdownMenuItem
                       onClick={openSavedPosts}
                       className="rounded-xl px-3 py-2.5 text-slate-700 hover:bg-slate-50"
                     >
@@ -372,6 +385,16 @@ const TipsterHeader = ({ isFixed = true }: TipsterHeaderProps) => {
                     className="rounded-xl px-4 py-3 text-sm font-medium text-light transition-colors hover:bg-white/10"
                   >
                     Mi perfil
+                  </Link>
+                )}
+                {role === 'ROLE_TIPSTER' && (
+                  <Link
+                    to="/invitar"
+                    onClick={closeMenu}
+                    className="inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium text-light transition-colors hover:bg-white/10"
+                  >
+                    <Gift className="h-4 w-4" />
+                    Invitar
                   </Link>
                 )}
                 {role === 'ROLE_TIPSTER' && (

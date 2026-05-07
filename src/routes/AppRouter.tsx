@@ -27,6 +27,7 @@ import UserProfilePage from '@/pages/profile/UserProfile';
 import { AuthSessionManager } from '@/components/auth/AuthSessionManager';
 import PostDetailPage from '@/pages/posts/PostDetail';
 import ReferralRedirectPage from '@/pages/referrals/ReferralRedirect';
+import InviteReferralsPage from '@/pages/referrals/InviteReferrals';
 
 export default function AppRouter() {
   return (
@@ -68,6 +69,7 @@ export default function AppRouter() {
         {/* Descomenta y agrega tus componentes cuando los tengas */}
         <Route element={<ProtectedRoute allowedRoles={['ROLE_TIPSTER']} />}>
           <Route path="/feed" element={<PostsFeedPage />} />
+          <Route path="/invitar" element={<InviteReferralsPage />} />
           <Route path="/guardados" element={<SavedPostsPage />} />
           <Route path="/perfil" element={<UserProfilePage />} />
           <Route path="/perfil/editar" element={<MiPerfilPage />} />

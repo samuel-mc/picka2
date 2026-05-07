@@ -7,6 +7,7 @@ import { getAuthUserId } from "@/lib/auth";
 import { PostComposer } from "@/components/posts/PostComposer";
 import { PostCard } from "@/components/posts/PostCard";
 import { PersonalizeFeedDialog } from "@/components/onboarding/PersonalizeFeedDialog";
+import { InviteFriendsNudgeDialog } from "@/components/referrals/InviteFriendsNudgeDialog";
 import { composePostSharePayload, shareContent } from "@/components/posts/post-utils";
 import { useAuthStore } from "@/stores/authStore";
 import type { ApiResponse, CatalogItem, CompetitionItem } from "@/types/catalog";
@@ -521,6 +522,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
           }}
         />
       )}
+      <InviteFriendsNudgeDialog enabled={canCreatePosts && !isSavedMode} onboardingOpen={showPersonalizeDialog} />
       <div className="mx-auto max-w-4xl space-y-6">
         <section className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[2rem] border border-white/70 bg-white/80 px-5 py-4 shadow-[0_14px_40px_rgba(15,76,129,0.08)] backdrop-blur">
