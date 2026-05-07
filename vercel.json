@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/og/image/**/*.tsx": {
+      "runtime": "edge"
+    }
+  },
   "rewrites": [
     {
       "source": "/posts/:postId",

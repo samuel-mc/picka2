@@ -26,8 +26,10 @@ function truncate(text: string, max = 220) {
   return `${s.slice(0, max - 1).trimEnd()}…`;
 }
 
-export default async function handler(req: Request, { params }: { params: { userId: string } }) {
-  const userId = params.userId;
+export default async function handler(req: Request) {
+  const url = new URL(req.url);
+  const parts = url.pathname.split("/").filter(Boolean);
+  const userId = parts[parts.length - 1] ?? "";
   const apiBaseUrl = env("API_BASE_URL", env("VITE_API_URL", "http://localhost:8080"));
 
   let profile: PublicProfile | null = null;

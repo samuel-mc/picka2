@@ -41,8 +41,10 @@ function labelFromPost(post: Post) {
   return "Análisis";
 }
 
-export default async function handler(req: Request, { params }: { params: { postId: string } }) {
-  const postId = params.postId;
+export default async function handler(req: Request) {
+  const url = new URL(req.url);
+  const parts = url.pathname.split("/").filter(Boolean);
+  const postId = parts[parts.length - 1] ?? "";
   const apiBaseUrl = env("API_BASE_URL", env("VITE_API_URL", "http://localhost:8080"));
 
   let post: Post | null = null;
