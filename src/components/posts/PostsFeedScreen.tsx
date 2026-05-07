@@ -32,7 +32,8 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
   const role = useAuthStore((state) => state.role);
   const canCreatePosts = role === "ROLE_TIPSTER";
   const isSavedMode = mode === "saved";
-  const [feedTab, setFeedTab] = useState<"following" | "discover">("discover");
+  const [feedTab, setFeedTab] = useState<"following" | "forYou">("forYou");
+  const [needsPersonalization, setNeedsPersonalization] = useState(false);
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [sports, setSports] = useState<CatalogItem[]>([]);
   const [competitions, setCompetitions] = useState<CompetitionItem[]>([]);
@@ -76,7 +77,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
             ? `/posts/users/${authorId}`
             : feedTab === "following"
               ? "/posts/feed/following"
-              : "/posts/feed/discover";
+              : "/posts/feed/for-you";
 
         if (endpoint === "/posts/feed/following") {
           const { data } = await api.get<ApiResponse<FollowingFeedResponse>>(endpoint, {
@@ -100,6 +101,34 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
     },
     [api, applyFeedResponse, authorFilter, feedTab, isSavedMode]
   );
+
+  useEffect(() => {
+    if (isSavedMode) return;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const { data } = await api.get<{
+          preferredCompetitions: unknown[] | null;
+          preferredTeams: unknown[] | null;
+        }>("/me/profile");
+
+        const hasPrefs =
+          (data.preferredCompetitions?.length ?? 0) > 0 || (data.preferredTeams?.length ?? 0) > 0;
+        if (!cancelled) {
+          setNeedsPersonalization(!hasPrefs);
+        }
+      } catch {
+        if (!cancelled) {
+          setNeedsPersonalization(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [api, isSavedMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -454,7 +483,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
       ? "Posts guardados"
       : feedTab === "following"
         ? "Siguiendo"
-        : "Descubrir";
+        : "Para ti";
 
   const description = showAuthorFilter
     ? "Puedes volver al feed principal cuando quieras."
@@ -462,7 +491,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
       ? "Consulta y administra las publicaciones que guardaste."
       : feedTab === "following"
         ? "Publicaciones de los tipsters que sigues."
-        : "Publicaciones destacadas de los últimos días.";
+        : "Recomendaciones basadas en tus ligas y equipos favoritos.";
   const loadingMessage = isSavedMode ? "Cargando posts guardados..." : "Cargando feed...";
   const emptyMessage = isSavedMode
     ? "Todavia no has guardado publicaciones."
@@ -472,7 +501,7 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
         ? followingCount === 0
           ? "Aún no sigues a ningún tipster.\nExplora publicaciones en Descubrir y comienza a seguir usuarios para personalizar tu feed."
           : "Todavía no hay publicaciones de los usuarios que sigues."
-        : "Aún no hay publicaciones destacadas para mostrar.";
+        : "Aún no hay recomendaciones para mostrar.";
 
   return (
     <main className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(237,95,47,0.22),transparent_32%),linear-gradient(180deg,#f7fbff_0%,#eef5fa_55%,#f9fbfd_100%)] px-4 py-10 sm:px-6 lg:px-8">
@@ -539,14 +568,39 @@ export function PostsFeedScreen({ mode = "feed" }: PostsFeedScreenProps) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setFeedTab("discover")}
+                  onClick={() => setFeedTab("forYou")}
                   className={
-                    feedTab === "discover"
+                    feedTab === "forYou"
                       ? "rounded-full bg-[#0f4c81] px-5 py-2 text-sm font-semibold text-white shadow-sm"
                       : "rounded-full px-5 py-2 text-sm font-semibold text-slate-600 transition hover:text-slate-900"
                   }
                 >
-                  Descubrir
+                  Para ti
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!isSavedMode && !showAuthorFilter && feedTab === "forYou" && needsPersonalization && (
+            <div className="rounded-[2rem] border border-[#cfe1ee] bg-white/80 p-6 shadow-[0_16px_46px_rgba(15,76,129,0.08)] backdrop-blur">
+              <p className="text-sm font-semibold text-slate-900">Personaliza tu feed</p>
+              <p className="mt-2 text-sm text-slate-600">
+                El feed “Para ti” usa tus ligas y equipos favoritos. Agrégalos para recibir mejores recomendaciones.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => navigate("/perfil/editar")}
+                  className="inline-flex items-center gap-2 rounded-full bg-[#0f4c81] px-4 py-2 text-sm font-semibold text-white"
+                >
+                  Configurar preferencias
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFeedTab("following")}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+                >
+                  Ver Siguiendo
                 </button>
               </div>
             </div>
