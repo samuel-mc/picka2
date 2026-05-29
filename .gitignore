@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+docs/
+
+# TestSprite local credentials & volatile tmp
+testsprite_tests/tmp/config.json
+testsprite_tests/tmp/mcp.log
+testsprite_tests/tmp/execution.lock
+testsprite_tests/

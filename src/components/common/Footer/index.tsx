@@ -19,6 +19,14 @@ const footerSections = [
       { label: "Registro interno", to: "/admin/registro" },
     ],
   },
+  {
+    title: "Legal",
+    links: [
+      { label: "Términos de uso", to: "/terminos" },
+      { label: "Política de Privacidad", to: "/privacidad" },
+      { label: "Juego responsable", to: "/juego-responsable" },
+    ],
+  },
 ];
 
 const trustPoints = [
@@ -103,10 +111,16 @@ const Footer = () => {
       <div className="border-t border-white/10 bg-[rgba(6,23,47,0.35)]">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-sm text-light/70 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-10">
           <p>© 2026 Picka2. Todos los derechos reservados.</p>
-          <div className="flex flex-wrap gap-5">
-            <span>Estadísticas verificadas</span>
-            <span>Acceso para tipsters</span>
-            <span>Experiencia profesional</span>
+          <div className="flex flex-wrap items-center gap-5">
+            <span className="inline-flex items-center gap-2">
+              +18 · Juega responsablemente ·
+              <Link
+                to="/juego-responsable"
+                className="font-semibold text-white/90 underline-offset-4 hover:underline"
+              >
+                Ver más
+              </Link>
+            </span>
           </div>
         </div>
       </div>

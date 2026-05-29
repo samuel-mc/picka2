@@ -36,6 +36,12 @@ function base64ToUint8Array(base64: string) {
   return bytes;
 }
 
+type NextRevalidateInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+  };
+};
+
 export default async function handler(req: Request) {
   try {
     const url = new URL(req.url);
@@ -47,7 +53,7 @@ export default async function handler(req: Request) {
     try {
       const r = await fetch(
         `${apiBaseUrl.replace(/\/+$/, "")}/users/public/${encodeURIComponent(userId)}/profile`,
-        { headers: { accept: "application/json" }, next: { revalidate: 3600 } } as any
+        { headers: { accept: "application/json" }, next: { revalidate: 3600 } } as NextRevalidateInit
       );
       if (r.ok) {
         profile = (await r.json()) as PublicProfile;
@@ -150,4 +156,3 @@ export default async function handler(req: Request) {
     });
   }
 }
-

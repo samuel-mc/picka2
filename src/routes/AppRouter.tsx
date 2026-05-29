@@ -28,6 +28,9 @@ import { AuthSessionManager } from '@/components/auth/AuthSessionManager';
 import PostDetailPage from '@/pages/posts/PostDetail';
 import ReferralRedirectPage from '@/pages/referrals/ReferralRedirect';
 import InviteReferralsPage from '@/pages/referrals/InviteReferrals';
+import TermsOfUsePage from "@/pages/legal/TermsOfUse";
+import PrivacyPolicyPage from "@/pages/legal/PrivacyPolicy";
+import ResponsibleGamblingPage from "@/pages/legal/ResponsibleGambling";
 
 export default function AppRouter() {
   return (
@@ -37,6 +40,9 @@ export default function AppRouter() {
         <Route path="/posts/:postId" element={<PostDetailPage />} />
         <Route path="/perfil/:userId" element={<UserProfilePage />} />
         <Route path="/r/:code" element={<ReferralRedirectPage />} />
+        <Route path="/terminos" element={<TermsOfUsePage />} />
+        <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+        <Route path="/juego-responsable" element={<ResponsibleGamblingPage />} />
 
         {/* Rutas Públicas (solo accesibles si NO estás logeado) */}
         <Route element={<PublicRoute />}>

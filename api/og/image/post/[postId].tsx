@@ -51,6 +51,12 @@ function base64ToUint8Array(base64: string) {
   return bytes;
 }
 
+type NextRevalidateInit = RequestInit & {
+  next?: {
+    revalidate?: number;
+  };
+};
+
 export default async function handler(req: Request) {
   try {
     const url = new URL(req.url);
@@ -65,7 +71,7 @@ export default async function handler(req: Request) {
         {
           headers: { accept: "application/json" },
           next: { revalidate: 3600 },
-        } as any
+        } as NextRevalidateInit
       );
       if (r.ok) {
         const json = (await r.json()) as ApiResponse<Post>;
@@ -176,4 +182,3 @@ export default async function handler(req: Request) {
     });
   }
 }
-
